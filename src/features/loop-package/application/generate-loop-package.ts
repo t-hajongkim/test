@@ -1,6 +1,9 @@
 import type { MigrationPlan } from "../../compatibility-analysis/domain/migration-plan.js";
 import type { CanonicalWorkspaceGraph } from "../../workspace-ingestion/domain/canonical-graph.js";
-import type { MigrationPackageManifest } from "../domain/migration-package.js";
+import type {
+  MigrationPackageManifest,
+  MigrationPackageProfile,
+} from "../domain/migration-package.js";
 import type { MigrationContentRenderer } from "./migration-content-renderer.js";
 import type { MigrationPackageWriter } from "./migration-package-writer.js";
 
@@ -8,6 +11,8 @@ export interface GenerateLoopPackageRequest {
   readonly graph: CanonicalWorkspaceGraph;
   readonly plan: MigrationPlan;
   readonly outputDirectory: string;
+  readonly profile?: MigrationPackageProfile;
+  readonly publicOutputRoot?: string;
   readonly generatedAt?: Date;
 }
 
@@ -36,6 +41,10 @@ export class GenerateLoopPackage {
 
     return this.writer.write({
       outputDirectory: request.outputDirectory,
+      profile: request.profile ?? "local",
+      ...(request.publicOutputRoot
+        ? { publicOutputRoot: request.publicOutputRoot }
+        : {}),
       generatedAt: request.generatedAt ?? new Date(),
       graph: request.graph,
       plan: request.plan,

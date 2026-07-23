@@ -1,12 +1,16 @@
 import type { MigrationPlan } from "../../compatibility-analysis/domain/migration-plan.js";
 import type { CanonicalWorkspaceGraph } from "../../workspace-ingestion/domain/canonical-graph.js";
-import type { RenderedMigrationItem } from "../domain/migration-package.js";
+import type {
+  MigrationPackageProfile,
+  RenderedMigrationItem,
+} from "../domain/migration-package.js";
 import { escapeHtml, safeJsonForHtml } from "./html-utils.js";
 
 export function renderDashboard(
   graph: CanonicalWorkspaceGraph,
   plan: MigrationPlan,
   renderedItems: readonly RenderedMigrationItem[],
+  profile: MigrationPackageProfile,
 ): string {
   const dashboardData = {
     graph: {
@@ -84,6 +88,11 @@ export function renderDashboard(
       border: 0; border-radius: 10px; padding: 9px 12px; color: var(--muted); background: transparent;
     }
     .nav button:hover, .nav button.active { color: var(--text); background: rgba(148, 163, 184, 0.12); }
+    .public-notice {
+      margin: 24px 12px 0; padding: 20px 22px; border: 1px solid rgba(251, 191, 36, .55);
+      border-radius: 18px; color: #fef3c7; background: rgba(120, 53, 15, .3); line-height: 1.6;
+    }
+    .public-notice strong { display: block; margin-bottom: 6px; color: #fde68a; font-size: 18px; }
     .hero {
       display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(300px, .55fr); gap: 30px;
       align-items: end; padding: 86px 12px 38px;
@@ -229,6 +238,16 @@ export function renderDashboard(
         <button data-section="graph">Graph</button>
       </div>
     </nav>
+
+    ${
+      profile === "public_demo"
+        ? `<aside class="public-notice">
+      <strong>합성 샘플 기반 오프라인 분석 데모</strong>
+      실제 이전 서비스가 아닙니다. ${plan.summary.fidelityScore}%는 실제 완료율이 아닌 예상 의미 보존 점수입니다.
+      실제 Notion 자료를 업로드하거나 커밋하지 마세요.
+    </aside>`
+        : ""
+    }
 
     <header class="hero">
       <div>
