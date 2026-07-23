@@ -1,9 +1,9 @@
 {
-  "updated_at": "2026-07-23T10:05:12.850+09:00",
+  "updated_at": "2026-07-23T10:11:18.590+09:00",
   "overall": {
     "status": "in_progress",
-    "phase": "live_notion_ingestion_setup",
-    "current_focus": "Prepare a read-only Notion internal integration, then implement a live API collector that generates the companion snapshot used with the ZIP export."
+    "phase": "ci_quality_gate",
+    "current_focus": "Validate the offline prototype automatically on pull requests and main pushes without publishing generated migration output."
   },
   "completed": [
     {
@@ -93,6 +93,7 @@
     }
   ],
   "next_steps": [
+    "Verify the CI quality gate locally and in the pull request, then keep the generated output private and uncommitted.",
     "Create a Notion internal integration with Read content capability.",
     "Connect the representative workspace root page and every related database to the integration.",
     "Store the Notion token in a local ignored environment file and identify the migration root page ID; never place the token in chat or project memory.",
@@ -108,6 +109,7 @@
     "memory/decisions.json",
     "memory/progress.json",
     "memory/backlog.json",
+    ".github/workflows/ci.yml",
     "environment.yml",
     "package.json",
     "package-lock.json",
@@ -158,6 +160,14 @@
     {
       "timestamp": "2026-07-23T10:05:12.850+09:00",
       "event": "Replaced the target repository working tree through an allowlisted migration, kept generated output ignored, and validated the offline prototype and staged content."
+    },
+    {
+      "timestamp": "2026-07-23T10:10:29.204+09:00",
+      "event": "Implemented a least-privilege Node.js 24 CI quality gate for the existing type-check, test, build, demo, and generated-file validation sequence."
+    },
+    {
+      "timestamp": "2026-07-23T10:11:18.590+09:00",
+      "event": "Passed the CI-equivalent local Node.js 24 validation: locked install, type-check, 9 tests, build, demo generation, and all four required output-file checks."
     }
   ]
 }

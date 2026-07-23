@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-07-22T17:32:08.9187133+09:00",
+  "updated_at": "2026-07-23T10:10:29.204+09:00",
   "items": [
     {
       "id": "B-001",
@@ -156,6 +156,17 @@
       "depends_on": [
         "B-003",
         "B-015"
+      ]
+    },
+    {
+      "id": "B-017",
+      "priority": "P0",
+      "status": "in_progress",
+      "title": "Add CI quality gate",
+      "description": "Run the locked Node.js 24 install, type-check, tests, build, demo, and generated-file checks for pull requests to main and pushes to main without publishing generated output.",
+      "depends_on": [
+        "B-013",
+        "B-014"
       ]
     }
   ]
