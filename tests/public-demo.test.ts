@@ -82,6 +82,10 @@ describe("public demo delivery", () => {
     expect(dashboard).toContain(
       "실제 Notion 자료를 업로드하거나 커밋하지 마세요",
     );
+    expect(dashboard).not.toMatch(/<(?:form|input|textarea|select)\b/i);
+    expect(dashboard).not.toMatch(
+      /connection-session|notion2loop_session|localStorage|sessionStorage|indexedDB/i,
+    );
     await expect(readFile(staleFile, "utf-8")).rejects.toThrow();
     await expect(
       new FileSystemPublicArtifactAuditor().assertSafe(outputDirectory),
@@ -117,6 +121,25 @@ describe("public demo delivery", () => {
     ).rejects.toThrow(
       /absolute path.*file URI.*email address.*phone number.*secret/i,
     );
+  });
+
+  it("rejects writable local connection controls from public artifacts", async () => {
+    const outputDirectory = await createTemporaryDirectory();
+    await writeFile(
+      path.join(outputDirectory, "index.html"),
+      [
+        "<form>",
+        '<input type="password" name="notionToken">',
+        '<input type="file" accept=".zip">',
+        "</form>",
+        '<script>sessionStorage.setItem("draft", "value"); fetch("/api/v1/connection-session");</script>',
+      ].join("\n"),
+      "utf-8",
+    );
+
+    await expect(
+      new FileSystemPublicArtifactAuditor().assertSafe(outputDirectory),
+    ).rejects.toThrow(/writable local connection UI/i);
   });
 
   it("refuses to clean an output directory outside the project output root", async () => {

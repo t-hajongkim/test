@@ -1,9 +1,9 @@
 {
-  "updated_at": "2026-07-23T10:44:00+09:00",
+  "updated_at": "2026-07-23T13:52:13.9018022+09:00",
   "overall": {
     "status": "in_progress",
-    "phase": "public_demo_delivery",
-    "current_focus": "Await review of the sanitized public demo pull request and resolution of the GitHub Pages eligibility blocker without merging from this session."
+    "phase": "local_connection_wizard_delivery",
+    "current_focus": "The localhost connection wizard vertical slice is ready for review; the next implementation boundary is bounded ZIP acquisition or the live Notion collector."
   },
   "completed": [
     {
@@ -90,6 +90,16 @@
       "id": "P-017",
       "completed_at": "2026-07-23T10:44:00+09:00",
       "summary": "Opened the sanitized public demo pull request and confirmed the remote Validate prototype check passed while Build public demo and Deploy public demo were skipped for the pull request event."
+    },
+    {
+      "id": "P-018",
+      "completed_at": "2026-07-23T13:50:08.4666308+09:00",
+      "summary": "Implemented the first localhost connection-wizard vertical slice with test-first DTO validation, in-memory secret sessions, ZIP metadata-only capture, Microsoft target selection, explicit deletion, loopback HTTP hardening, public UI exclusion, and nontechnical guidance."
+    },
+    {
+      "id": "P-019",
+      "completed_at": "2026-07-23T13:52:13.9018022+09:00",
+      "summary": "Passed the complete Node.js 24 validation with type-checking, all 24 tests, build, ordinary demo generation, fresh public demo generation, artifact privacy audit, required output checks, valid shared-memory JSON, and clean generated output."
     }
   ],
   "blockers": [
@@ -109,7 +119,7 @@
       "id": "BL-004",
       "severity": "medium",
       "summary": "A live Notion integration and connected test workspace have not yet been configured.",
-      "resolution_path": "Create an internal integration with Read content capability, connect the migration root page and related databases, and store the token only in local secret configuration."
+      "resolution_path": "Create an internal integration with Read content capability, connect the migration root page and related databases, and provide the token only through the localhost in-memory session."
     },
     {
       "id": "BL-005",
@@ -119,12 +129,15 @@
     }
   ],
   "next_steps": [
+    "Review and merge the localhost connection wizard pull request after its validation checks pass.",
     "Review and merge the sanitized public demo pull request after its remote Validate prototype check passes.",
     "Resolve BL-005 so a subsequent main push can configure, upload, and deploy the github-pages artifact.",
     "Create a Notion internal integration with Read content capability.",
     "Connect the representative workspace root page and every related database to the integration.",
-    "Store the Notion token in a local ignored environment file and identify the migration root page ID; never place the token in chat or project memory.",
+    "Enter the Notion token and root page or database ID only through the localhost in-memory session; never place the token in chat, project memory, files, or generated output.",
+    "Add bounded ZIP byte acquisition behind the validated ZIP metadata contract.",
     "Implement the live Notion API collector and emit the existing companion snapshot schema.",
+    "Implement Microsoft delegated login and keep Graph tokens inside the same in-memory deletion boundary.",
     "Run the combined API plus ZIP ingestion before continuing with Microsoft 365 target execution and second-pass relation resolution."
   ],
   "artifacts": [
@@ -155,7 +168,10 @@
     "tests/compatibility-analysis.test.ts",
     "tests/loop-package.test.ts",
     "tests/public-demo.test.ts",
-    "src/features/public-demo"
+    "src/features/public-demo",
+    "src/features/connection-setup",
+    "tests/connection-setup.test.ts",
+    "tests/local-connection-app.test.ts"
   ],
   "history": [
     {
@@ -213,6 +229,14 @@
     {
       "timestamp": "2026-07-23T10:44:00+09:00",
       "event": "Opened pull request #4 and verified the remote validation passed with both main-only Pages jobs skipped on the pull request."
+    },
+    {
+      "timestamp": "2026-07-23T13:50:08.4666308+09:00",
+      "event": "Completed the localhost connection wizard implementation with seven new connection and HTTP security contracts plus a public artifact regression that excludes writable local controls."
+    },
+    {
+      "timestamp": "2026-07-23T13:52:13.9018022+09:00",
+      "event": "Validated the complete local connection slice and its existing CLI, migration package, public demo, privacy, build, and memory contracts with 24 passing tests."
     }
   ]
 }

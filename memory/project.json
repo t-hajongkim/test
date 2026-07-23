@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-07-22T16:15:36.8216186+09:00",
+  "updated_at": "2026-07-23T13:50:08.4666308+09:00",
   "project": {
     "name": "Notion2Loop",
     "stage": "prototype_demo_ready",
@@ -89,12 +89,19 @@
       "Structured Claude/GPT-compatible agent task queue.",
       "Per-item HTML previews and a visual local dashboard."
     ],
+    "local_connection_setup": [
+      "A localhost-only start screen and guided Source, Notion, Microsoft, Target, and workflow wizard.",
+      "Validated ZIP name and size metadata or Notion API connection information stored only in a process-memory session.",
+      "Explicit Notion token removal and full session termination without external API or deployment side effects."
+    ],
     "safety_boundaries": [
       "Source archive and directory ingestion is bounded by file count and byte limits.",
       "ZIP paths are normalized and traversal paths are rejected before extraction.",
       "Untrusted source IDs are hashed before being used as generated filenames.",
       "Rendered content is sanitized before preview or clipboard use.",
-      "The local dashboard server is restricted to localhost and its resolved content root."
+      "The local dashboard server is restricted to localhost and its resolved content root.",
+      "The interactive connection app binds only to 127.0.0.1, validates Host and Origin, limits request bodies, and never persists connection secrets.",
+      "The public demo remains a synthetic read-only artifact with no writable connection, secret, or ZIP input controls."
     ]
   },
   "proposed_system": {
