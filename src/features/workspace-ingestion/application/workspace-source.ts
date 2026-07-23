@@ -5,5 +5,5 @@ export interface SourceFile {
 
 export interface WorkspaceSource {
   readonly description: string;
-  readFiles(): Promise<readonly SourceFile[]>;
+  readFiles(): AsyncIterable<SourceFile>;
 }

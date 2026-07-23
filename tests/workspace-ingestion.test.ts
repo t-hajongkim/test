@@ -44,12 +44,28 @@ describe("Notion workspace ingestion", () => {
     ).toHaveLength(2);
   });
 
+  it("preserves title inference from a top-level index HTML export", async () => {
+    const temporaryDirectory = await mkdtemp(
+      path.join(os.tmpdir(), "notion2loop-index-title-"),
+    );
+    temporaryDirectories.push(temporaryDirectory);
+    await writeFile(
+      path.join(temporaryDirectory, "index.html"),
+      "<h1>Export index</h1>",
+    );
+
+    const graph = await ingest(
+      new DirectoryWorkspaceSource(temporaryDirectory),
+    );
+
+    expect(graph.title).toBe("index");
+  });
+
   it("produces the same graph content from a ZIP export", async () => {
     const directorySource = new DirectoryWorkspaceSource(fixtureDirectory);
-    const sourceFiles = await directorySource.readFiles();
     const archiveContent: Record<string, Uint8Array> = {};
 
-    for (const file of sourceFiles) {
+    for await (const file of directorySource.readFiles()) {
       archiveContent[file.path] = file.content;
     }
 
@@ -82,11 +98,11 @@ describe("Notion workspace ingestion", () => {
     );
 
     await expect(
-      new ZipWorkspaceSource(archivePath).readFiles(),
+      collectFiles(new ZipWorkspaceSource(archivePath)),
     ).rejects.toThrow("Unsafe source path");
   });
 
-  it("rejects ZIPs that exceed configured source limits", async () => {
+  it("streams ZIP entries and rejects per-entry source limits", async () => {
     const temporaryDirectory = await mkdtemp(
       path.join(os.tmpdir(), "notion2loop-limits-"),
     );
@@ -99,13 +115,43 @@ describe("Notion workspace ingestion", () => {
       }),
     );
 
+    const source = new ZipWorkspaceSource(archivePath, {
+      maxFileCount: 10,
+      maxEntryBytes: 4,
+      maxTotalBytes: 1024,
+      maxArchiveBytes: 1024 * 1024,
+    });
+
+    expect(Symbol.asyncIterator in source.readFiles()).toBe(true);
     await expect(
-      new ZipWorkspaceSource(archivePath, {
-        maxFileCount: 10,
-        maxTotalBytes: 4,
-        maxArchiveBytes: 1024 * 1024,
-      }).readFiles(),
-    ).rejects.toThrow("exceeds 4 uncompressed bytes");
+      collectFiles(source),
+    ).rejects.toThrow("entry exceeds 4 uncompressed bytes");
+  });
+
+  it("rejects ZIPs that exceed configured total source limits", async () => {
+    const temporaryDirectory = await mkdtemp(
+      path.join(os.tmpdir(), "notion2loop-total-limits-"),
+    );
+    temporaryDirectories.push(temporaryDirectory);
+    const archivePath = path.join(temporaryDirectory, "oversized.zip");
+    await writeFile(
+      archivePath,
+      zipSync({
+        "one.md": new TextEncoder().encode("123"),
+        "two.md": new TextEncoder().encode("456"),
+      }),
+    );
+
+    await expect(
+      collectFiles(
+        new ZipWorkspaceSource(archivePath, {
+          maxFileCount: 10,
+          maxEntryBytes: 4,
+          maxTotalBytes: 5,
+          maxArchiveBytes: 1024 * 1024,
+        }),
+      ),
+    ).rejects.toThrow("exceeds 5 uncompressed bytes");
   });
 });
 
@@ -116,4 +162,14 @@ async function ingest(
     source,
     generatedAt,
   );
+}
+
+async function collectFiles(
+  source: DirectoryWorkspaceSource | ZipWorkspaceSource,
+) {
+  const files = [];
+  for await (const file of source.readFiles()) {
+    files.push(file);
+  }
+  return files;
 }

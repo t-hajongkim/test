@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-07-23T15:27:44.3537702+09:00",
+  "updated_at": "2026-07-23T16:09:35.6252646+09:00",
   "project": {
     "name": "Notion2Loop",
     "stage": "prototype_demo_ready",
@@ -102,7 +102,7 @@
       "Rendered content is sanitized before preview or clipboard use.",
       "The local dashboard server is restricted to localhost and its resolved content root.",
       "The interactive connection app binds only to 127.0.0.1, validates Host and Origin, limits request bodies, and never persists connection secrets.",
-      "Local ZIP uploads are streamed to exclusive random OS temp files, enforce compressed, actual streamed uncompressed, file-count, structure, size, and CRC validation, and retry deletion on session or application shutdown after transient failures.",
+      "Local ZIP uploads are streamed to exclusive random OS temp files, then parsed through bounded central-directory reads and chunked fflate decoding with a 16 MiB per-entry buffer cap; compressed bytes, actual cumulative output, file count, structure, path safety, duplicates, size, and CRC are enforced while streams and temp files are closed on failure or cancellation.",
       "The public demo remains a synthetic read-only artifact with no writable connection, secret, or ZIP input controls."
     ]
   },

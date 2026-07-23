@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-07-23T15:27:44.3537702+09:00",
+  "updated_at": "2026-07-23T16:09:35.6252646+09:00",
   "items": [
     {
       "id": "B-001",
@@ -211,6 +211,16 @@
       "description": "Use the validated tenant and client IDs for a loopback delegated login, request least-privilege Graph consent, and keep access and refresh tokens inside the same process-memory deletion boundary.",
       "depends_on": [
         "B-019"
+      ]
+    },
+    {
+      "id": "B-022",
+      "priority": "P0",
+      "status": "done",
+      "title": "Remove ZIP parser full buffering",
+      "description": "Stream staged ZIP archives through bounded metadata reads and fflate entry decoders, enforce per-entry and cumulative memory boundaries plus integrity checks, and redact malformed CSV failures at the HTTP boundary.",
+      "depends_on": [
+        "B-020"
       ]
     }
   ]

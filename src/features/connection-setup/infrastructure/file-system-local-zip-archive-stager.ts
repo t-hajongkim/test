@@ -96,6 +96,7 @@ export class FileSystemLocalZipArchiveStager
           archivePath,
           this.#limits,
           "local-upload:notion-zip",
+          request.signal,
         ),
         async dispose(): Promise<void> {
           if (disposed) {

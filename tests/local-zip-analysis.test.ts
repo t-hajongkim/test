@@ -7,7 +7,12 @@ import {
 import os from "node:os";
 import path from "node:path";
 
-import { Zip, ZipDeflate, zipSync } from "fflate";
+import {
+  Zip,
+  ZipDeflate,
+  ZipPassThrough,
+  zipSync,
+} from "fflate";
 import { afterEach, describe, expect, it } from "vitest";
 
 import type {
@@ -269,6 +274,22 @@ describe("local ZIP analysis", () => {
     });
 
     await expectArchiveFailure({
+      archive: forgeUncompressedSize(
+        zipSync({
+          "single-entry.md": textEncoder.encode("x".repeat(256 * 1024)),
+        }),
+        1,
+      ),
+      limits: strictLimits({
+        maxEntryBytes: 64 * 1024,
+        maxTotalBytes: 512 * 1024,
+      }),
+      expectedCode: "ZIP_UNCOMPRESSED_LIMIT_EXCEEDED",
+      expectedMessage: "압축을 푼 크기",
+      expectedStatus: 413,
+    });
+
+    await expectArchiveFailure({
       archive: zipSync({
         "one.md": textEncoder.encode("1"),
         "two.md": textEncoder.encode("2"),
@@ -302,6 +323,17 @@ describe("local ZIP analysis", () => {
       expectedCode: "ZIP_INVALID",
       expectedMessage: "올바른 Notion ZIP",
     });
+
+    await expectArchiveFailure({
+      archive: corruptDeflateStream(
+        zipSync({
+          "deflate.md": textEncoder.encode("content ".repeat(1024)),
+        }),
+      ),
+      limits: strictLimits(),
+      expectedCode: "ZIP_INVALID",
+      expectedMessage: "올바른 Notion ZIP",
+    });
   });
 
   it("returns a safe 4xx error for malformed exported JSON", async () => {
@@ -324,6 +356,61 @@ describe("local ZIP analysis", () => {
     });
     expect(await readdir(tempDirectory)).toEqual([]);
     await expectSessionStatus(app, session.cookie, "failed", "failed");
+  });
+
+  it("returns a redacted typed 4xx error for malformed exported CSV", async () => {
+    const tempDirectory = await createTemporaryDirectory();
+    const logs: string[] = [];
+    const sourceMarker = "private-csv-value-7349";
+    const app = await startApp({
+      stager: new FileSystemLocalZipArchiveStager({ tempDirectory }),
+      logs,
+    });
+    const archive = zipSync({
+      "private-database.csv": textEncoder.encode(
+        `Name,Secret\n"unterminated,${sourceMarker}`,
+      ),
+    });
+    const session = await startConfiguredSession(app, archive.byteLength);
+
+    const response = await uploadZip(app, session.cookie, archive);
+    const body = await response.text();
+
+    expect(response.status).toBe(422);
+    expect(JSON.parse(body)).toMatchObject({
+      error: {
+        code: "ZIP_INVALID",
+        message: expect.stringContaining("올바른 Notion ZIP"),
+      },
+    });
+    expect(body).not.toContain("CsvError");
+    expect(body).not.toContain("Quote Not Closed");
+    expect(body).not.toContain(sourceMarker);
+    expect(body).not.toContain(tempDirectory);
+    expect(body).not.toMatch(/[A-Za-z]:\\|\/(?:Users|home|tmp)\//u);
+    expect(logs.join("\n")).not.toContain("CsvError");
+    expect(logs.join("\n")).not.toContain("Quote Not Closed");
+    expect(logs.join("\n")).not.toContain(sourceMarker);
+    expect(logs.join("\n")).not.toContain(tempDirectory);
+    expect(await readdir(tempDirectory)).toEqual([]);
+    await expectSessionStatus(app, session.cookie, "failed", "failed");
+  });
+
+  it("accepts a valid ZIP with an unsigned data descriptor", async () => {
+    const archive = await createUnsignedDataDescriptorArchive(
+      "Descriptor Page 0123456789abcdef0123456789abcdef.md",
+      textEncoder.encode("# Descriptor Page"),
+    );
+    const app = await startApp();
+    const session = await startConfiguredSession(app, archive.byteLength);
+
+    const response = await uploadZip(app, session.cookie, archive);
+
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({
+      status: "analysis_ready",
+      workflow: { analysis: "ready" },
+    });
   });
 
   it("closes an incomplete rejected upload so application shutdown cannot hang", async () => {
@@ -394,9 +481,11 @@ describe("local ZIP analysis", () => {
     let disposeCount = 0;
     const source: WorkspaceSource = {
       description: "local-upload:notion-zip",
-      async readFiles() {
+      async *readFiles() {
         readStarted.resolve();
-        return readGate.promise;
+        for (const file of await readGate.promise) {
+          yield file;
+        }
       },
     };
     const stager: LocalZipArchiveStager = {
@@ -802,11 +891,11 @@ async function expectArchiveFailure(options: {
 async function createFixtureArchive(
   additionalFiles: Readonly<Record<string, Uint8Array>> = {},
 ): Promise<Uint8Array> {
-  const sourceFiles = await new DirectoryWorkspaceSource(
-    path.resolve("fixtures/notion-export"),
-  ).readFiles();
   const archiveContent: Record<string, Uint8Array> = { ...additionalFiles };
-  for (const file of sourceFiles) {
+  const source = new DirectoryWorkspaceSource(
+    path.resolve("fixtures/notion-export"),
+  );
+  for await (const file of source.readFiles()) {
     archiveContent[file.path] = file.content;
   }
   return zipSync(archiveContent);
@@ -833,6 +922,51 @@ async function createDuplicatePathArchive(): Promise<Uint8Array> {
     second.push(textEncoder.encode("second"), true);
     archive.end();
   });
+}
+
+async function createUnsignedDataDescriptorArchive(
+  fileName: string,
+  content: Uint8Array,
+): Promise<Uint8Array> {
+  const signedArchive = await new Promise<Uint8Array>((resolve, reject) => {
+    const chunks: Uint8Array[] = [];
+    const archive = new Zip((error, chunk, final) => {
+      if (error) {
+        reject(error);
+        return;
+      }
+      chunks.push(chunk);
+      if (final) {
+        resolve(concatenate(chunks));
+      }
+    });
+    const file = new ZipPassThrough(fileName);
+    archive.add(file);
+    file.push(content, true);
+    archive.end();
+  });
+  const signed = Buffer.from(signedArchive);
+  const descriptorSignature = signed.indexOf(
+    Buffer.from([0x50, 0x4b, 0x07, 0x08]),
+  );
+  if (descriptorSignature < 0) {
+    throw new Error("The ZIP fixture does not contain a data descriptor.");
+  }
+  const unsigned = Buffer.concat([
+    signed.subarray(0, descriptorSignature),
+    signed.subarray(descriptorSignature + 4),
+  ]);
+  const endRecord = unsigned.lastIndexOf(
+    Buffer.from([0x50, 0x4b, 0x05, 0x06]),
+  );
+  if (endRecord < 0) {
+    throw new Error("The ZIP fixture does not contain an end record.");
+  }
+  unsigned.writeUInt32LE(
+    unsigned.readUInt32LE(endRecord + 16) - 4,
+    endRecord + 16,
+  );
+  return unsigned;
 }
 
 function concatenate(chunks: readonly Uint8Array[]): Uint8Array {
@@ -880,11 +1014,27 @@ function corruptCentralDirectoryCrc(archive: Uint8Array): Uint8Array {
   return corrupted;
 }
 
+function corruptDeflateStream(archive: Uint8Array): Uint8Array {
+  const corrupted = Buffer.from(archive);
+  const localHeader = corrupted.indexOf(
+    Buffer.from([0x50, 0x4b, 0x03, 0x04]),
+  );
+  if (localHeader < 0) {
+    throw new Error("The ZIP fixture does not contain a local header.");
+  }
+  const nameLength = corrupted.readUInt16LE(localHeader + 26);
+  const extraLength = corrupted.readUInt16LE(localHeader + 28);
+  const dataStart = localHeader + 30 + nameLength + extraLength;
+  corrupted[dataStart] = (corrupted[dataStart]! & 0xf9) | 0x06;
+  return corrupted;
+}
+
 function strictLimits(
   overrides: Partial<SourceReadLimits> = {},
 ): SourceReadLimits {
   return {
     maxArchiveBytes: 1_024 * 1_024,
+    maxEntryBytes: 1_024 * 1_024,
     maxTotalBytes: 1_024 * 1_024,
     maxFileCount: 100,
     ...overrides,

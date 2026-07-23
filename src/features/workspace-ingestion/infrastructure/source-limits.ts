@@ -2,12 +2,14 @@ import { WorkspaceSourceError } from "../application/workspace-source-error.js";
 
 export interface SourceReadLimits {
   readonly maxFileCount: number;
+  readonly maxEntryBytes: number;
   readonly maxTotalBytes: number;
   readonly maxArchiveBytes: number;
 }
 
 export const DEFAULT_SOURCE_READ_LIMITS: SourceReadLimits = {
   maxFileCount: 10_000,
+  maxEntryBytes: 16 * 1024 * 1024,
   maxTotalBytes: 200 * 1024 * 1024,
   maxArchiveBytes: 200 * 1024 * 1024,
 };
@@ -34,6 +36,19 @@ export function assertSourceByteCount(
     throw new WorkspaceSourceError(
       "uncompressed_size_limit",
       `${description} exceeds ${limits.maxTotalBytes} uncompressed bytes.`,
+    );
+  }
+}
+
+export function assertSourceEntryByteCount(
+  byteCount: number,
+  limits: SourceReadLimits,
+  description: string,
+): void {
+  if (byteCount > limits.maxEntryBytes) {
+    throw new WorkspaceSourceError(
+      "uncompressed_size_limit",
+      `${description} entry exceeds ${limits.maxEntryBytes} uncompressed bytes.`,
     );
   }
 }

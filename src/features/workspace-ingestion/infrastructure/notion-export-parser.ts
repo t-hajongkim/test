@@ -8,6 +8,7 @@ import type {
   ParseWorkspaceRequest,
   WorkspaceParser,
 } from "../application/workspace-parser.js";
+import type { SourceFile } from "../application/workspace-source.js";
 import { WorkspaceSourceError } from "../application/workspace-source-error.js";
 import {
   CanonicalEdgeSchema,
@@ -35,6 +36,45 @@ interface LinkReference {
   readonly target: string;
   readonly attachment: boolean;
 }
+
+interface PreparedSnapshotFile {
+  readonly kind: "snapshot";
+  readonly path: string;
+  readonly snapshot: NotionApiSnapshot;
+}
+
+interface PreparedCsvFile {
+  readonly kind: "csv";
+  readonly path: string;
+  readonly records: readonly Record<string, string>[];
+}
+
+interface PreparedPageFile {
+  readonly kind: "page";
+  readonly path: string;
+  readonly format: "markdown" | "html";
+  readonly content: string;
+}
+
+interface PreparedAssetFile {
+  readonly kind: "asset";
+  readonly path: string;
+  readonly byteLength: number;
+  readonly mimeType: string;
+  readonly dataUrl?: string;
+}
+
+interface PreparedIgnoredFile {
+  readonly kind: "ignored";
+  readonly path: string;
+}
+
+type PreparedSourceFile =
+  | PreparedSnapshotFile
+  | PreparedCsvFile
+  | PreparedPageFile
+  | PreparedAssetFile
+  | PreparedIgnoredFile;
 
 export class NotionExportParser implements WorkspaceParser {
   public async parse(
@@ -64,19 +104,12 @@ export class NotionExportParser implements WorkspaceParser {
   private async parseValidated(
     request: ParseWorkspaceRequest,
   ): Promise<CanonicalWorkspaceGraph> {
-    const files = [...request.files].sort((left, right) =>
-      left.path.localeCompare(right.path),
-    );
+    const files = await prepareSourceFiles(request.files);
     const snapshotFile = files.find(
-      (file) =>
-        path.posix.basename(file.path).toLowerCase() ===
-        "notion-api-snapshot.json",
+      (file): file is PreparedSnapshotFile =>
+        file.kind === "snapshot",
     );
-    const snapshot = snapshotFile
-      ? NotionApiSnapshotSchema.parse(
-          JSON.parse(decoder.decode(snapshotFile.content)),
-        )
-      : undefined;
+    const snapshot = snapshotFile?.snapshot;
     const workspaceId =
       snapshot?.workspace.id ??
       stableId(`workspace:${request.sourceDescription}`);
@@ -221,27 +254,21 @@ export class NotionExportParser implements WorkspaceParser {
   }
 
   private addDatabasesAndRows(
-    files: readonly ParseWorkspaceRequest["files"][number][],
+    files: readonly PreparedSourceFile[],
     snapshot: NotionApiSnapshot | undefined,
     workspaceId: string,
     nodesById: Map<string, CanonicalNode>,
   ): void {
-    for (const file of files.filter(
-      (candidate) => path.posix.extname(candidate.path).toLowerCase() === ".csv",
-    )) {
+    for (const file of files) {
+      if (file.kind !== "csv") {
+        continue;
+      }
       const databaseId =
         extractNotionId(file.path) ?? stableId(`database:${file.path}`);
       const snapshotDatabase = snapshot?.databases.find(
         (database) => database.id === databaseId,
       );
-      const records = CsvRecordsSchema.parse(
-        parseCsv(decoder.decode(file.content), {
-          bom: true,
-          columns: true,
-          relax_column_count: true,
-          skip_empty_lines: true,
-        }),
-      );
+      const records = file.records;
       const inferredColumns = records[0] ? Object.keys(records[0]) : [];
       const propertySchemas =
         snapshotDatabase?.properties.map((property) =>
@@ -320,22 +347,15 @@ export class NotionExportParser implements WorkspaceParser {
   }
 
   private addPageContent(
-    files: readonly ParseWorkspaceRequest["files"][number][],
+    files: readonly PreparedSourceFile[],
     snapshot: NotionApiSnapshot | undefined,
     workspaceId: string,
     nodesById: Map<string, CanonicalNode>,
   ): void {
-    const pageFiles = files.filter((file) => {
-      const extension = path.posix.extname(file.path).toLowerCase();
-      return (
-        extension === ".md" ||
-        (extension === ".html" &&
-          path.posix.basename(file.path).toLowerCase() !== "index.html")
-      );
-    });
-
-    for (const file of pageFiles) {
-      const extension = path.posix.extname(file.path).toLowerCase();
+    for (const file of files) {
+      if (file.kind !== "page") {
+        continue;
+      }
       const extractedId =
         extractNotionId(file.path) ?? stableId(`page:${file.path}`);
       const snapshotRow = snapshot?.rows.find((row) => row.id === extractedId);
@@ -362,8 +382,8 @@ export class NotionExportParser implements WorkspaceParser {
           title,
           sourcePath: normalizeSourcePath(file.path),
           parentId,
-          contentFormat: extension === ".md" ? "markdown" : "html",
-          content: decoder.decode(file.content),
+          contentFormat: file.format,
+          content: file.content,
           propertySchemas: existing?.propertySchemas ?? [],
           properties: existing?.properties ?? {},
           metadata: {
@@ -377,27 +397,16 @@ export class NotionExportParser implements WorkspaceParser {
   }
 
   private addAssets(
-    files: readonly ParseWorkspaceRequest["files"][number][],
+    files: readonly PreparedSourceFile[],
     workspaceId: string,
     nodesById: Map<string, CanonicalNode>,
   ): void {
     for (const file of files) {
-      const extension = path.posix.extname(file.path).toLowerCase();
-      const basename = path.posix.basename(file.path).toLowerCase();
-
-      if (
-        [".md", ".csv", ".html"].includes(extension) ||
-        basename === "notion-api-snapshot.json"
-      ) {
+      if (file.kind !== "asset") {
         continue;
       }
 
       const assetId = stableId(`asset:${file.path}`);
-      const mimeType = inferMimeType(file.path);
-      const dataUrl =
-        mimeType.startsWith("image/") && file.content.byteLength <= 1024 * 1024
-          ? `data:${mimeType};base64,${Buffer.from(file.content).toString("base64")}`
-          : undefined;
       nodesById.set(
         assetId,
         CanonicalNodeSchema.parse({
@@ -409,9 +418,9 @@ export class NotionExportParser implements WorkspaceParser {
           propertySchemas: [],
           properties: {},
           metadata: {
-            byteLength: file.content.byteLength,
-            mimeType,
-            ...(dataUrl ? { dataUrl } : {}),
+            byteLength: file.byteLength,
+            mimeType: file.mimeType,
+            ...(file.dataUrl ? { dataUrl: file.dataUrl } : {}),
             parentSource: "inferred",
           },
         }),
@@ -487,16 +496,85 @@ export class NotionExportParser implements WorkspaceParser {
   }
 }
 
+async function prepareSourceFiles(
+  sourceFiles: AsyncIterable<SourceFile>,
+): Promise<readonly PreparedSourceFile[]> {
+  const files: PreparedSourceFile[] = [];
+  for await (const sourceFile of sourceFiles) {
+    const sourcePath = normalizeSourcePath(sourceFile.path);
+    const extension = path.posix.extname(sourcePath).toLowerCase();
+    const basename = path.posix.basename(sourcePath).toLowerCase();
+
+    if (basename === "notion-api-snapshot.json") {
+      files.push({
+        kind: "snapshot",
+        path: sourcePath,
+        snapshot: NotionApiSnapshotSchema.parse(
+          JSON.parse(decoder.decode(sourceFile.content)),
+        ),
+      });
+      continue;
+    }
+    if (extension === ".csv") {
+      files.push({
+        kind: "csv",
+        path: sourcePath,
+        records: CsvRecordsSchema.parse(
+          parseCsv(decoder.decode(sourceFile.content), {
+            bom: true,
+            columns: true,
+            relax_column_count: true,
+            skip_empty_lines: true,
+          }),
+        ),
+      });
+      continue;
+    }
+    if (
+      extension === ".md" ||
+      (extension === ".html" && basename !== "index.html")
+    ) {
+      files.push({
+        kind: "page",
+        path: sourcePath,
+        format: extension === ".md" ? "markdown" : "html",
+        content: decoder.decode(sourceFile.content),
+      });
+      continue;
+    }
+    if (extension === ".html") {
+      files.push({ kind: "ignored", path: sourcePath });
+      continue;
+    }
+
+    const mimeType = inferMimeType(sourcePath);
+    const dataUrl =
+      mimeType.startsWith("image/") &&
+      sourceFile.content.byteLength <= 1024 * 1024
+        ? `data:${mimeType};base64,${Buffer.from(sourceFile.content).toString("base64")}`
+        : undefined;
+    files.push({
+      kind: "asset",
+      path: sourcePath,
+      byteLength: sourceFile.content.byteLength,
+      mimeType,
+      ...(dataUrl ? { dataUrl } : {}),
+    });
+  }
+  return files.sort((left, right) =>
+    left.path.localeCompare(right.path),
+  );
+}
+
 function inferWorkspaceTitle(
-  files: readonly ParseWorkspaceRequest["files"][number][],
+  files: readonly PreparedSourceFile[],
 ): string {
   const topLevelContent = files.find((file) => {
+    if (file.kind !== "page" && file.kind !== "ignored") {
+      return false;
+    }
     const normalized = normalizeSourcePath(file.path);
-    const extension = path.posix.extname(normalized).toLowerCase();
-    return (
-      !normalized.includes("/") &&
-      (extension === ".md" || extension === ".html")
-    );
+    return !normalized.includes("/");
   });
 
   return topLevelContent
