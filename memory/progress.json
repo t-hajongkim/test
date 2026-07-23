@@ -1,0 +1,163 @@
+{
+  "updated_at": "2026-07-23T10:05:12.850+09:00",
+  "overall": {
+    "status": "in_progress",
+    "phase": "live_notion_ingestion_setup",
+    "current_focus": "Prepare a read-only Notion internal integration, then implement a live API collector that generates the companion snapshot used with the ZIP export."
+  },
+  "completed": [
+    {
+      "id": "P-001",
+      "completed_at": "2026-07-22T09:41:00+09:00",
+      "summary": "Confirmed that no mature direct Notion-to-Loop migration product or open-source project was found."
+    },
+    {
+      "id": "P-002",
+      "completed_at": "2026-07-22T10:00:00+09:00",
+      "summary": "Verified that documented Loop external integrations cover GitHub, Jira, and Trello, not Notion."
+    },
+    {
+      "id": "P-003",
+      "completed_at": "2026-07-22T10:00:00+09:00",
+      "summary": "Verified the absence of a documented public Loop page content mutation API and identified the separate management API announcement."
+    },
+    {
+      "id": "P-004",
+      "completed_at": "2026-07-22T11:02:00+09:00",
+      "summary": "Analyzed Notion export fidelity and established that the API and exports must be combined for complex migration."
+    },
+    {
+      "id": "P-005",
+      "completed_at": "2026-07-22T11:17:00+09:00",
+      "summary": "Evaluated Loop Copilot as an execution surface and found that it can assist transformation but cannot autonomously update a page or workspace."
+    },
+    {
+      "id": "P-006",
+      "completed_at": "2026-07-22T11:41:02.759+09:00",
+      "summary": "Created a shared Claude/GPT project memory structure and recorded research, decisions, progress, and backlog."
+    },
+    {
+      "id": "P-007",
+      "completed_at": "2026-07-22T11:45:00.2845448+09:00",
+      "summary": "Recorded feature-first DDD as the accepted code organization convention for all agents."
+    },
+    {
+      "id": "P-008",
+      "completed_at": "2026-07-22T14:35:39.1234817+09:00",
+      "summary": "Finalized the phased execution plan and created a reproducible project-local Micromamba environment with Node.js 24, locked npm dependencies, strict TypeScript, and Vitest."
+    },
+    {
+      "id": "P-009",
+      "completed_at": "2026-07-22T16:15:36.8216186+09:00",
+      "summary": "Implemented the representative Notion fixture, canonical graph ingestion for directories and ZIPs, deterministic compatibility analysis, provider-neutral agent tasks, sanitized Loop-ready HTML, and the visual Migration Studio dashboard."
+    },
+    {
+      "id": "P-010",
+      "completed_at": "2026-07-22T16:15:36.8216186+09:00",
+      "summary": "Hardened source ingestion and package generation against path traversal, oversized archives, stale generated pages, and static-server path escapes; regenerated the demo and passed all 9 tests, type-checking, and build."
+    },
+    {
+      "id": "P-011",
+      "completed_at": "2026-07-22T16:19:58.8505947+09:00",
+      "summary": "Started the built Migration Studio as an independent localhost process and verified successful GET and HEAD responses on port 4173."
+    },
+    {
+      "id": "P-012",
+      "completed_at": "2026-07-22T17:32:08.9187133+09:00",
+      "summary": "Confirmed from official Notion documentation that a read-only internal integration can access connected pages, databases, property schemas, and relation IDs when all related content is shared with it."
+    },
+    {
+      "id": "P-013",
+      "completed_at": "2026-07-23T10:05:12.850+09:00",
+      "summary": "Migrated the allowlisted offline prototype into the Git-backed target repository, documented its safety boundaries, and verified the Node.js 24 type-check, tests, build, demo, and staged-data security checks."
+    }
+  ],
+  "blockers": [
+    {
+      "id": "BL-001",
+      "severity": "high",
+      "summary": "No documented public API currently provides deterministic native Loop page and block creation.",
+      "resolution_path": "Confirm internal Loop APIs or prove a supported guided insertion adapter."
+    },
+    {
+      "id": "BL-003",
+      "severity": "medium",
+      "summary": "The default target mapping for complex databases has not been chosen.",
+      "resolution_path": "Compare Loop tables, Microsoft Lists, Planner, and Adaptive Card-based components against sample schemas."
+    },
+    {
+      "id": "BL-004",
+      "severity": "medium",
+      "summary": "A live Notion integration and connected test workspace have not yet been configured.",
+      "resolution_path": "Create an internal integration with Read content capability, connect the migration root page and related databases, and store the token only in local secret configuration."
+    }
+  ],
+  "next_steps": [
+    "Create a Notion internal integration with Read content capability.",
+    "Connect the representative workspace root page and every related database to the integration.",
+    "Store the Notion token in a local ignored environment file and identify the migration root page ID; never place the token in chat or project memory.",
+    "Implement the live Notion API collector and emit the existing companion snapshot schema.",
+    "Run the combined API plus ZIP ingestion before continuing with Microsoft 365 target execution and second-pass relation resolution."
+  ],
+  "artifacts": [
+    "AGENTS.md",
+    "CLAUDE.md",
+    "memory/index.json",
+    "memory/project.json",
+    "memory/research.json",
+    "memory/decisions.json",
+    "memory/progress.json",
+    "memory/backlog.json",
+    "environment.yml",
+    "package.json",
+    "package-lock.json",
+    "tsconfig.json",
+    "vitest.config.ts",
+    "scripts/bootstrap.ps1",
+    "scripts/run-in-env.ps1",
+    ".gitignore",
+    "README.md",
+    "fixtures/notion-export/notion-api-snapshot.json",
+    "src/features/workspace-ingestion",
+    "src/features/compatibility-analysis",
+    "src/features/loop-package",
+    "src/features/migration-run",
+    "tests/workspace-ingestion.test.ts",
+    "tests/compatibility-analysis.test.ts",
+    "tests/loop-package.test.ts"
+  ],
+  "history": [
+    {
+      "timestamp": "2026-07-22T11:41:02.759+09:00",
+      "event": "Initialized cross-model project memory from the discovery conversation."
+    },
+    {
+      "timestamp": "2026-07-22T11:45:00.2845448+09:00",
+      "event": "Accepted feature-first DDD with per-feature domain, application, infrastructure, and presentation layers."
+    },
+    {
+      "timestamp": "2026-07-22T14:35:39.1234817+09:00",
+      "event": "Completed execution planning and verified the portable Micromamba TypeScript environment with type-checking, tests, and build."
+    },
+    {
+      "timestamp": "2026-07-22T16:15:36.8216186+09:00",
+      "event": "Completed the end-to-end offline migration prototype and generated a 73 percent fidelity demo for the representative workspace."
+    },
+    {
+      "timestamp": "2026-07-22T16:15:36.8216186+09:00",
+      "event": "Added bounded source ingestion, safe generated filenames, clean package regeneration, and resolved-root static serving; all 9 tests, type-checking, and build passed."
+    },
+    {
+      "timestamp": "2026-07-22T16:19:58.8505947+09:00",
+      "event": "Verified the generated Migration Studio over localhost at port 4173 using the built application."
+    },
+    {
+      "timestamp": "2026-07-22T17:32:08.9187133+09:00",
+      "event": "Confirmed the Notion internal integration path and recorded the exact user setup and live collector implementation handoff."
+    },
+    {
+      "timestamp": "2026-07-23T10:05:12.850+09:00",
+      "event": "Replaced the target repository working tree through an allowlisted migration, kept generated output ignored, and validated the offline prototype and staged content."
+    }
+  ]
+}

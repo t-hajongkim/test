@@ -1,0 +1,120 @@
+{
+  "updated_at": "2026-07-22T17:32:08.9187133+09:00",
+  "findings": [
+    {
+      "id": "R-001",
+      "verified_at": "2026-07-22T10:00:00+09:00",
+      "claim": "Microsoft Loop's documented external data integrations are GitHub, Jira, and Trello; Notion is not listed.",
+      "confidence": "high",
+      "source_type": "official",
+      "sources": [
+        "https://learn.microsoft.com/en-us/microsoft-365/loop/loop-data-integrations-configuration?view=o365-worldwide"
+      ],
+      "implication": "Notion migration is a product gap rather than a documented native Loop integration."
+    },
+    {
+      "id": "R-002",
+      "verified_at": "2026-07-22T10:00:00+09:00",
+      "claim": "No public supported Microsoft Graph resource or endpoint for bulk creation and mutation of native Loop workspaces, pages, or page blocks was found in the current official Graph reference and changelog.",
+      "confidence": "high",
+      "source_type": "official_documentation_search",
+      "sources": [
+        "https://learn.microsoft.com/en-us/graph/changelog",
+        "https://github.com/microsoftgraph/microsoft-graph-docs-contrib"
+      ],
+      "notes": "The official Graph documentation contains references to Loop components as Teams message attachments, but no documented Loop page content CRUD resource.",
+      "implication": "A public-API-only MVP needs a guided insertion path or a non-native destination for structured data."
+    },
+    {
+      "id": "R-003",
+      "verified_at": "2026-07-22T10:00:00+09:00",
+      "claim": "Microsoft announced 'Graph APIs for management' for Loop with an estimated H1 CY 2026 target, but no public content-creation endpoint or documentation was found by the verification date.",
+      "confidence": "medium",
+      "source_type": "official_announcement",
+      "sources": [
+        "https://techcommunity.microsoft.com/blog/microsoft_365blog/copilot-pages--notebooks-microsoft-loop-it-admin-update-%E2%80%93-december-2025/4474306"
+      ],
+      "notes": "The announcement describes organizational management tooling and does not state that page body or block mutation is supported.",
+      "implication": "Internal verification is required before treating the announced management APIs as a migration write surface."
+    },
+    {
+      "id": "R-004",
+      "verified_at": "2026-07-22T11:02:00+09:00",
+      "claim": "A Notion Markdown and CSV workspace export preserves page snapshots, database rows, subpages, and assets, but it is not sufficient to recreate the original workspace.",
+      "confidence": "high",
+      "source_type": "official",
+      "sources": [
+        "https://www.notion.com/help/export-your-content"
+      ],
+      "notes": "Non-database pages export as Markdown, full-page databases as CSV, database row pages as Markdown, and accessible assets as files. Notion explicitly states that reuploading the export cannot instantly recreate the workspace.",
+      "implication": "High-fidelity migration should combine the Notion API with workspace exports."
+    },
+    {
+      "id": "R-005",
+      "verified_at": "2026-07-22T11:02:00+09:00",
+      "claim": "Notion API relation properties expose related page IDs when the integration has access, enabling deterministic reconstruction of relation edges.",
+      "confidence": "high",
+      "source_type": "official",
+      "sources": [
+        "https://developers.notion.com/reference/retrieve-a-page",
+        "https://developers.notion.com/reference/retrieve-a-page-property-item",
+        "https://developers.notion.com/reference/property-object"
+      ],
+      "implication": "The canonical migration model should use Notion IDs rather than relying on relation text from CSV."
+    },
+    {
+      "id": "R-006",
+      "verified_at": "2026-07-22T11:17:00+09:00",
+      "claim": "Copilot in Loop cannot currently ask about the Loop workspace or make updates to the currently open page.",
+      "confidence": "high",
+      "source_type": "official",
+      "sources": [
+        "https://support.microsoft.com/en-us/loop/frequently-asked-questions-about-copilot-in-loop"
+      ],
+      "notes": "Users can insert a Copilot response manually, but Copilot is not a workspace-wide autonomous write surface.",
+      "implication": "A migration harness can use Copilot for transformation, but it still needs a user-approved or supported execution mechanism."
+    },
+    {
+      "id": "R-007",
+      "verified_at": "2026-07-22T10:00:00+09:00",
+      "claim": "Adaptive Card-based Loop components are officially documented and can provide live, actionable content that can be copied across supported Microsoft 365 hosts.",
+      "confidence": "high",
+      "source_type": "official",
+      "sources": [
+        "https://learn.microsoft.com/en-us/microsoftteams/platform/m365-apps/cards-loop-component",
+        "https://learn.microsoft.com/en-us/microsoftteams/platform/m365-apps/design-loop-components"
+      ],
+      "implication": "A Notion-to-Loop bridge component is a possible alternative to native content migration, but it remains externally backed content."
+    },
+    {
+      "id": "R-008",
+      "verified_at": "2026-07-22T09:41:00+09:00",
+      "claim": "No mature open-source full-workspace Notion-to-Loop migrator was found; existing projects cover source conversion, clipboard formatting, or reverse export.",
+      "confidence": "medium",
+      "source_type": "github_search",
+      "sources": [
+        "https://github.com/souvikinator/notion-to-md",
+        "https://github.com/makenotion/notion-sdk-js",
+        "https://github.com/trsdn/md2loop",
+        "https://github.com/trsdn/md2loop-windows",
+        "https://github.com/DrakeLambert/microsoft-loop-to-markdown",
+        "https://github.com/stuffbucket/loopd"
+      ],
+      "implication": "The project can reuse extraction and clipboard conversion ideas but still needs its own migration graph, mapping engine, and validation workflow."
+    },
+    {
+      "id": "R-009",
+      "verified_at": "2026-07-22T17:32:08.9187133+09:00",
+      "claim": "A Notion internal integration with Read content capability can read explicitly connected pages and databases, including inherited child content. Complete relation reconstruction requires access to the related pages and databases.",
+      "confidence": "high",
+      "source_type": "official",
+      "sources": [
+        "https://developers.notion.com/guides/get-started/internal-connections",
+        "https://developers.notion.com/guides/get-started/authorization",
+        "https://developers.notion.com/reference/retrieve-a-page-property-item"
+      ],
+      "notes": "The integration must be added as a connection to the migration root page. Its token must remain in local secret storage and must not be written to project memory.",
+      "implication": "The next source-side milestone is a live Notion API collector that produces the companion snapshot already consumed by the prototype."
+    }
+  ]
+}

@@ -1,0 +1,47 @@
+{
+  "schema_version": "1.0",
+  "updated_at": "2026-07-22T14:35:39.1234817+09:00",
+  "purpose": "Canonical project memory shared by Claude, GPT, Copilot, and human contributors.",
+  "read_order": [
+    "../AGENTS.md",
+    "project.json",
+    "research.json",
+    "decisions.json",
+    "progress.json",
+    "backlog.json"
+  ],
+  "files": {
+    "project.json": "Stable product goal, proposed architecture, constraints, and open questions.",
+    "research.json": "Externally verified facts with dates, sources, confidence, and implications.",
+    "decisions.json": "Accepted, proposed, rejected, and superseded product or architecture decisions.",
+    "progress.json": "Current phase, completed work, blockers, next steps, and milestone history.",
+    "backlog.json": "Prioritized executable work items."
+  },
+  "update_protocol": [
+    "Update progress.json after every meaningful milestone or newly confirmed blocker.",
+    "Append decisions rather than rewriting history; mark replaced entries as superseded.",
+    "Add research only with a source URL and verification timestamp.",
+    "Mark a decision accepted only after explicit user agreement or implementation evidence.",
+    "Keep volatile status out of AGENTS.md and CLAUDE.md.",
+    "Do not store secrets or private workspace content."
+  ],
+  "status_values": {
+    "decision": [
+      "proposed",
+      "accepted",
+      "rejected",
+      "superseded"
+    ],
+    "work_item": [
+      "pending",
+      "in_progress",
+      "blocked",
+      "done"
+    ],
+    "confidence": [
+      "low",
+      "medium",
+      "high"
+    ]
+  }
+}

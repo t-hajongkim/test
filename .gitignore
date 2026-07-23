@@ -1,0 +1,54 @@
+# Project-local runtimes and tools
+.venv/
+.mamba/
+.tools/
+
+# Node dependencies and generated build files
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+
+# Generated migration packages and temporary files
+output/
+tmp/
+
+# Private or real migration inputs
+/input/
+/inputs/
+/exports/
+/data/
+/private/
+*.zip
+*.tar
+*.tar.gz
+*.tgz
+*.7z
+
+# Local environment variables and credentials
+.env
+.env.*
+!.env.example
+.npmrc
+*.pem
+*.key
+*.p12
+*.pfx
+*.crt
+*.cer
+*.der
+*.jks
+*.keystore
+id_rsa
+id_rsa.*
+id_ed25519
+id_ed25519.*
+/credentials*.json
+/secrets*.json
+/token*.json
+
+# Local editor and operating-system files
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
