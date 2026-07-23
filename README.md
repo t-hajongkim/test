@@ -1,9 +1,15 @@
 # Notion2Loop
 
+[![CI quality gate](https://github.com/t-hajongkim/test/actions/workflows/ci.yml/badge.svg)](https://github.com/t-hajongkim/test/actions/workflows/ci.yml)
+
 Notion2Loop는 Notion 내보내기 자료를 읽고, Microsoft Loop로 옮길 때 무엇을 그대로 살릴 수 있고 무엇을 사람이 검토해야 하는지 보여 주는 **로컬 실행형 프로토타입**입니다.
 
 > [!IMPORTANT]
 > 현재 버전은 실제 Notion API에 접속하지 않고 Microsoft Loop에도 아무것도 쓰지 않습니다. 저장소의 가상 예제 자료를 분석해 정적 HTML 검토 화면과 JSON 보고서를 만드는 오프라인 데모입니다.
+
+## CI 품질 게이트
+
+CI는 변경을 main에 합치기 전에 자동으로 타입·테스트·빌드를 검사하는 안전문입니다. 모든 main 대상 pull request와 main push에서 Node.js 24로 아래의 `serve` 이전 명령을 실행하고, 핵심 데모 파일이 생성되는지 확인하되 결과물을 저장하거나 공개하지 않습니다.
 
 ## 빠르게 실행하기
 
