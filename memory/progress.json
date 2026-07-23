@@ -1,9 +1,9 @@
 {
-  "updated_at": "2026-07-23T10:42:00+09:00",
+  "updated_at": "2026-07-23T10:44:00+09:00",
   "overall": {
     "status": "in_progress",
     "phase": "public_demo_delivery",
-    "current_focus": "Complete final validation and open the sanitized GitHub Pages delivery pull request without merging it."
+    "current_focus": "Await review of the sanitized public demo pull request and resolution of the GitHub Pages eligibility blocker without merging from this session."
   },
   "completed": [
     {
@@ -85,6 +85,11 @@
       "id": "P-016",
       "completed_at": "2026-07-23T10:42:00+09:00",
       "summary": "Passed the complete Node.js 24 validation with locked install, type-checking, all 16 tests, build, fresh public demo generation, artifact-wide privacy audit, valid shared memory JSON, and confirmation that output remains untracked."
+    },
+    {
+      "id": "P-017",
+      "completed_at": "2026-07-23T10:44:00+09:00",
+      "summary": "Opened the sanitized public demo pull request and confirmed the remote Validate prototype check passed while Build public demo and Deploy public demo were skipped for the pull request event."
     }
   ],
   "blockers": [
@@ -204,6 +209,10 @@
     {
       "timestamp": "2026-07-23T10:42:00+09:00",
       "event": "Completed the Node.js 24 release validation with 16 passing tests, build output, public artifact privacy enforcement, destructive-path guards, and untracked generated output."
+    },
+    {
+      "timestamp": "2026-07-23T10:44:00+09:00",
+      "event": "Opened pull request #4 and verified the remote validation passed with both main-only Pages jobs skipped on the pull request."
     }
   ]
 }
