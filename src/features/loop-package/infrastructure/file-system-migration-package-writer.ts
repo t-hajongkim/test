@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { mkdir, rm, writeFile } from "node:fs/promises";
+import { lstat, mkdir, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 
 import type {
@@ -22,7 +22,15 @@ export class FileSystemMigrationPackageWriter
   ): Promise<MigrationPackageManifest> {
     const outputDirectory = path.resolve(request.outputDirectory);
     const pagesDirectory = path.join(outputDirectory, "pages");
-    await rm(pagesDirectory, { force: true, recursive: true });
+    if (request.profile === "public_demo") {
+      await assertPublicOutputDirectory(
+        outputDirectory,
+        request.publicOutputRoot,
+      );
+      await rm(outputDirectory, { force: true, recursive: true });
+    } else {
+      await rm(pagesDirectory, { force: true, recursive: true });
+    }
     await mkdir(pagesDirectory, { recursive: true });
 
     const files: string[] = [];
@@ -59,7 +67,12 @@ export class FileSystemMigrationPackageWriter
     const dashboardPath = "index.html";
     await writeFile(
       path.join(outputDirectory, dashboardPath),
-      renderDashboard(request.graph, request.plan, request.renderedItems),
+      renderDashboard(
+        request.graph,
+        request.plan,
+        request.renderedItems,
+        request.profile,
+      ),
       "utf-8",
     );
     files.push(dashboardPath);
@@ -69,7 +82,8 @@ export class FileSystemMigrationPackageWriter
       workspaceId: request.graph.workspaceId,
       workspaceTitle: request.graph.title,
       generatedAt: request.generatedAt.toISOString(),
-      outputDirectory,
+      outputDirectory:
+        request.profile === "public_demo" ? "." : outputDirectory,
       dashboardPath,
       files: [...files, "manifest.json"].sort(),
       renderedItems: request.renderedItems.length,
@@ -82,6 +96,66 @@ export class FileSystemMigrationPackageWriter
     );
 
     return manifest;
+  }
+}
+
+async function assertPublicOutputDirectory(
+  outputDirectory: string,
+  publicOutputRoot: string | undefined,
+): Promise<void> {
+  if (!publicOutputRoot) {
+    throw new Error("The public demo output root is required.");
+  }
+
+  const resolvedRoot = path.resolve(publicOutputRoot);
+  const relativeOutput = path.relative(resolvedRoot, outputDirectory);
+  if (
+    relativeOutput === "" ||
+    relativeOutput === ".." ||
+    relativeOutput.startsWith(`..${path.sep}`) ||
+    path.isAbsolute(relativeOutput)
+  ) {
+    throw new Error(
+      `The public demo output must be inside ${resolvedRoot}.`,
+    );
+  }
+
+  let currentPath = resolvedRoot;
+  for (const segment of ["", ...relativeOutput.split(path.sep)]) {
+    if (segment) {
+      currentPath = path.join(currentPath, segment);
+    }
+    const status = await readExistingStatus(currentPath);
+    if (!status) {
+      break;
+    }
+    if (status.isSymbolicLink()) {
+      throw new Error(
+        `The public demo output cannot pass through a symbolic link: ${currentPath}`,
+      );
+    }
+    if (!status.isDirectory()) {
+      throw new Error(
+        `The public demo output path must contain only directories: ${currentPath}`,
+      );
+    }
+  }
+}
+
+async function readExistingStatus(
+  targetPath: string,
+): Promise<Awaited<ReturnType<typeof lstat>> | undefined> {
+  try {
+    return await lstat(targetPath);
+  } catch (error: unknown) {
+    if (
+      error instanceof Error &&
+      "code" in error &&
+      error.code === "ENOENT"
+    ) {
+      return undefined;
+    }
+    throw error;
   }
 }
 

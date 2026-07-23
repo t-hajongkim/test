@@ -1,5 +1,10 @@
 {
   "schemaVersion": "1.0",
+  "publicDemoFixture": {
+    "classification": "synthetic",
+    "containsRealNotionData": false,
+    "safeForPublicDistribution": true
+  },
   "workspace": {
     "id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
     "title": "Notion2Loop Demo"

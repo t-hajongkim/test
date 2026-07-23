@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-07-22T16:15:36.8216186+09:00",
+  "updated_at": "2026-07-23T10:24:00+09:00",
   "decisions": [
     {
       "id": "D-001",
@@ -88,6 +88,14 @@
       "decision": "Treat archive metadata and source identifiers as untrusted: enforce bounded ingestion, reject unsafe ZIP paths before extraction, and never use source IDs directly as output paths.",
       "rationale": "Migration inputs can be malformed or adversarial, and source-controlled paths must not escape the generated package or exhaust local resources.",
       "source": "Implemented security hardening and regression tests"
+    },
+    {
+      "id": "D-012",
+      "status": "accepted",
+      "decided_at": "2026-07-23T10:24:00+09:00",
+      "decision": "Publish only a freshly generated synthetic fixture through the dedicated public-demo profile; clean the destination first, replace environment-specific metadata through typed generation inputs, and reject privacy or secret patterns before artifact upload.",
+      "rationale": "The user explicitly required a hard boundary between local migrations and a sanitized GitHub Pages demo, and the boundary is implemented with regression tests while ordinary local migration metadata remains unchanged.",
+      "source": "User instruction and implemented public demo privacy contract"
     }
   ]
 }

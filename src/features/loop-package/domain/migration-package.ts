@@ -5,6 +5,8 @@ import {
   TargetKindSchema,
 } from "../../compatibility-analysis/domain/migration-plan.js";
 
+export const MigrationPackageProfileSchema = z.enum(["local", "public_demo"]);
+
 export const RenderedMigrationItemSchema = z.object({
   sourceId: z.string().min(1),
   title: z.string().min(1),
@@ -27,6 +29,9 @@ export const MigrationPackageManifestSchema = z.object({
 
 export type RenderedMigrationItem = z.infer<
   typeof RenderedMigrationItemSchema
+>;
+export type MigrationPackageProfile = z.infer<
+  typeof MigrationPackageProfileSchema
 >;
 export type MigrationPackageManifest = z.infer<
   typeof MigrationPackageManifestSchema

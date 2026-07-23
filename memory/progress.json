@@ -1,9 +1,9 @@
 {
-  "updated_at": "2026-07-23T10:12:28.856+09:00",
+  "updated_at": "2026-07-23T10:44:00+09:00",
   "overall": {
     "status": "in_progress",
-    "phase": "live_notion_ingestion_setup",
-    "current_focus": "Prepare a read-only Notion internal integration, then implement a live API collector that generates the companion snapshot used with the ZIP export."
+    "phase": "public_demo_delivery",
+    "current_focus": "Await review of the sanitized public demo pull request and resolution of the GitHub Pages eligibility blocker without merging from this session."
   },
   "completed": [
     {
@@ -75,6 +75,21 @@
       "id": "P-014",
       "completed_at": "2026-07-23T10:12:28.856+09:00",
       "summary": "Added and remotely verified the Node.js 24 CI quality gate for locked install, type-check, tests, build, demo generation, and required output-file checks without publishing generated output."
+    },
+    {
+      "id": "P-015",
+      "completed_at": "2026-07-23T10:24:00+09:00",
+      "summary": "Implemented the dedicated public-demo profile, synthetic fixture declaration, clean output generation, typed public metadata, visible safety warning, full artifact privacy audit, and validate-to-Pages workflow dependency graph while preserving ordinary local migration paths."
+    },
+    {
+      "id": "P-016",
+      "completed_at": "2026-07-23T10:42:00+09:00",
+      "summary": "Passed the complete Node.js 24 validation with locked install, type-checking, all 16 tests, build, fresh public demo generation, artifact-wide privacy audit, valid shared memory JSON, and confirmation that output remains untracked."
+    },
+    {
+      "id": "P-017",
+      "completed_at": "2026-07-23T10:44:00+09:00",
+      "summary": "Opened the sanitized public demo pull request and confirmed the remote Validate prototype check passed while Build public demo and Deploy public demo were skipped for the pull request event."
     }
   ],
   "blockers": [
@@ -95,9 +110,17 @@
       "severity": "medium",
       "summary": "A live Notion integration and connected test workspace have not yet been configured.",
       "resolution_path": "Create an internal integration with Read content capability, connect the migration root page and related databases, and store the token only in local secret configuration."
+    },
+    {
+      "id": "BL-005",
+      "severity": "high",
+      "summary": "GitHub Pages is disabled because t-hajongkim/test is private while the owning account is on the GitHub Free plan.",
+      "resolution_path": "Make the repository public or upgrade to a plan that supports Pages for private repositories, then set Settings > Pages > Build and deployment > Source to GitHub Actions. actions/configure-pages cannot self-enable Pages with GITHUB_TOKEN because its enablement input requires a separate token with repository administration and Pages write access."
     }
   ],
   "next_steps": [
+    "Review and merge the sanitized public demo pull request after its remote Validate prototype check passes.",
+    "Resolve BL-005 so a subsequent main push can configure, upload, and deploy the github-pages artifact.",
     "Create a Notion internal integration with Read content capability.",
     "Connect the representative workspace root page and every related database to the integration.",
     "Store the Notion token in a local ignored environment file and identify the migration root page ID; never place the token in chat or project memory.",
@@ -130,7 +153,9 @@
     "src/features/migration-run",
     "tests/workspace-ingestion.test.ts",
     "tests/compatibility-analysis.test.ts",
-    "tests/loop-package.test.ts"
+    "tests/loop-package.test.ts",
+    "tests/public-demo.test.ts",
+    "src/features/public-demo"
   ],
   "history": [
     {
@@ -176,6 +201,18 @@
     {
       "timestamp": "2026-07-23T10:12:28.856+09:00",
       "event": "Opened the CI quality-gate pull request and confirmed the GitHub Actions Validate prototype job completed successfully."
+    },
+    {
+      "timestamp": "2026-07-23T10:24:00+09:00",
+      "event": "Implemented and locally validated a synthetic-only public demo boundary with typed path sanitization, artifact-wide privacy checks, explicit user-facing disclaimers, and a main-push-only GitHub Pages workflow."
+    },
+    {
+      "timestamp": "2026-07-23T10:42:00+09:00",
+      "event": "Completed the Node.js 24 release validation with 16 passing tests, build output, public artifact privacy enforcement, destructive-path guards, and untracked generated output."
+    },
+    {
+      "timestamp": "2026-07-23T10:44:00+09:00",
+      "event": "Opened pull request #4 and verified the remote validation passed with both main-only Pages jobs skipped on the pull request."
     }
   ]
 }

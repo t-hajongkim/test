@@ -23,8 +23,15 @@ export const SnapshotPropertyValueSchema = z.object({
   pageIds: z.array(z.string().min(1)).default([]),
 });
 
+export const PublicDemoFixtureDeclarationSchema = z.object({
+  classification: z.literal("synthetic"),
+  containsRealNotionData: z.literal(false),
+  safeForPublicDistribution: z.literal(true),
+});
+
 export const NotionApiSnapshotSchema = z.object({
   schemaVersion: z.literal("1.0"),
+  publicDemoFixture: PublicDemoFixtureDeclarationSchema.optional(),
   workspace: z.object({
     id: z.string().min(1),
     title: z.string().min(1),
@@ -70,6 +77,9 @@ export const NotionApiSnapshotSchema = z.object({
 });
 
 export type NotionApiSnapshot = z.infer<typeof NotionApiSnapshotSchema>;
+export type PublicDemoFixtureDeclaration = z.infer<
+  typeof PublicDemoFixtureDeclarationSchema
+>;
 export type SnapshotPropertyValue = z.infer<
   typeof SnapshotPropertyValueSchema
 >;

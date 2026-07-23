@@ -3,7 +3,13 @@ import path from "node:path";
 import { Command, Option } from "commander";
 
 import { startDashboardServer } from "../../loop-package/infrastructure/static-dashboard-server.js";
-import { RunMigration } from "../application/run-migration.js";
+import { GeneratePublicDemo } from "../../public-demo/application/generate-public-demo.js";
+import { FileSystemPublicArtifactAuditor } from "../../public-demo/infrastructure/file-system-public-artifact-auditor.js";
+import { FileSystemPublicDemoFixtureVerifier } from "../../public-demo/infrastructure/file-system-public-demo-fixture-verifier.js";
+import {
+  RunMigration,
+  type RunMigrationResult,
+} from "../application/run-migration.js";
 
 export async function runCli(argv: readonly string[]): Promise<void> {
   const program = new Command()
@@ -35,6 +41,34 @@ export async function runCli(argv: readonly string[]): Promise<void> {
         path.resolve("fixtures/notion-export"),
         options.output,
       );
+    });
+
+  program
+    .command("public-demo")
+    .description("Generate the synthetic, privacy-audited public demo.")
+    .option("-o, --output <directory>", "Output directory", "output/demo")
+    .action(async (options: { output: string }) => {
+      const auditor = new FileSystemPublicArtifactAuditor();
+      const result = await new GeneratePublicDemo(
+        new RunMigration(),
+        new FileSystemPublicDemoFixtureVerifier(auditor),
+        auditor,
+      ).execute({
+        projectRoot: path.resolve("."),
+        outputDirectory: path.resolve(options.output),
+      });
+      writeMigrationSummary(result);
+    });
+
+  program
+    .command("check-public-demo")
+    .description("Audit every public demo artifact for private data.")
+    .option("-d, --directory <directory>", "Demo directory", "output/demo")
+    .action(async (options: { directory: string }) => {
+      await new FileSystemPublicArtifactAuditor().assertSafe(
+        path.resolve(options.directory),
+      );
+      process.stdout.write("Public demo privacy audit passed.\n");
     });
 
   program
@@ -78,6 +112,10 @@ async function generateMigration(
     outputDirectory: path.resolve(outputDirectory),
   });
 
+  writeMigrationSummary(result);
+}
+
+function writeMigrationSummary(result: RunMigrationResult): void {
   process.stdout.write(
     [
       `Workspace: ${result.graph.title}`,

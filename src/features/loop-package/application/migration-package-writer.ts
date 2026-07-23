@@ -2,11 +2,14 @@ import type { MigrationPlan } from "../../compatibility-analysis/domain/migratio
 import type { CanonicalWorkspaceGraph } from "../../workspace-ingestion/domain/canonical-graph.js";
 import type {
   MigrationPackageManifest,
+  MigrationPackageProfile,
   RenderedMigrationItem,
 } from "../domain/migration-package.js";
 
 export interface WriteMigrationPackageRequest {
   readonly outputDirectory: string;
+  readonly profile: MigrationPackageProfile;
+  readonly publicOutputRoot?: string;
   readonly generatedAt: Date;
   readonly graph: CanonicalWorkspaceGraph;
   readonly plan: MigrationPlan;
