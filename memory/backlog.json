@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-07-23T13:50:08.4666308+09:00",
+  "updated_at": "2026-07-23T15:27:44.3537702+09:00",
   "items": [
     {
       "id": "B-001",
@@ -195,7 +195,7 @@
     {
       "id": "B-020",
       "priority": "P0",
-      "status": "pending",
+      "status": "done",
       "title": "Add bounded ZIP acquisition",
       "description": "Stream selected ZIP bytes through a localhost-only bounded endpoint, reuse archive size and traversal protections, and connect the uploaded source to existing workspace ingestion without persisting the archive.",
       "depends_on": [

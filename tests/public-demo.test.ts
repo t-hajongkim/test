@@ -84,7 +84,7 @@ describe("public demo delivery", () => {
     );
     expect(dashboard).not.toMatch(/<(?:form|input|textarea|select)\b/i);
     expect(dashboard).not.toMatch(
-      /connection-session|notion2loop_session|localStorage|sessionStorage|indexedDB/i,
+      /connection-session|local-zip-analysis|application\/zip|notion2loop_session|localStorage|sessionStorage|indexedDB/i,
     );
     await expect(readFile(staleFile, "utf-8")).rejects.toThrow();
     await expect(

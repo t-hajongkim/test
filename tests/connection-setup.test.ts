@@ -102,7 +102,11 @@ describe("connection setup", () => {
     const save = new SaveConnectionSetup(store);
     const getSummary = new GetConnectionSessionSummary(store);
     const clearToken = new ClearNotionToken(store);
-    const end = new EndConnectionSession(store);
+    const end = new EndConnectionSession(store, {
+      stopAccepting() {},
+      async cancel() {},
+      async cancelAll() {},
+    });
     const first = await start.execute();
     const second = await start.execute();
     const marker = "ntn_session_secret_marker";

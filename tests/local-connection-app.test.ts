@@ -37,7 +37,23 @@ describe("local connection app", () => {
     expect(page).toContain("분석");
     expect(page).toContain("검토·승인");
     expect(page).toContain("배포");
+    expect(page).toContain('data-action="analyze-local-zip"');
+    expect(page).toContain("PC 밖으로 전송되지 않습니다");
     expect(script).toContain("/api/v1/connection-session");
+    expect(script).toContain("/local-zip-analysis");
+    expect(script).toContain('"Content-Type": "application/zip"');
+    expect(script).toContain("body: file");
+    expect(script).toMatch(/uploading[\s\S]*analyzing[\s\S]*analysis_ready/);
+    expect(
+      script.indexOf(
+        'analyzeLocalZipButton.addEventListener("click"',
+      ),
+    ).toBeLessThan(
+      script.indexOf('form.addEventListener("submit"'),
+    );
+    expect(script).toMatch(
+      /const polledSummary = await request\("", \{ method: "GET" \}\);[\s\S]*if \(!stopped\) \{[\s\S]*renderSummary\(polledSummary\)/,
+    );
     expect(script).not.toMatch(/localStorage|sessionStorage|indexedDB/i);
     expect(script).not.toMatch(/FileReader|arrayBuffer|FormData/);
 

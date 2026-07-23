@@ -1,13 +1,14 @@
 import { createHash } from "node:crypto";
 import path from "node:path";
 
-import { parse as parseCsv } from "csv-parse/sync";
+import { CsvError, parse as parseCsv } from "csv-parse/sync";
 import { z } from "zod";
 
 import type {
   ParseWorkspaceRequest,
   WorkspaceParser,
 } from "../application/workspace-parser.js";
+import { WorkspaceSourceError } from "../application/workspace-source-error.js";
 import {
   CanonicalEdgeSchema,
   CanonicalNodeSchema,
@@ -37,6 +38,30 @@ interface LinkReference {
 
 export class NotionExportParser implements WorkspaceParser {
   public async parse(
+    request: ParseWorkspaceRequest,
+  ): Promise<CanonicalWorkspaceGraph> {
+    try {
+      return await this.parseValidated(request);
+    } catch (error) {
+      if (
+        error instanceof WorkspaceSourceError ||
+        error instanceof SyntaxError ||
+        error instanceof z.ZodError ||
+        error instanceof CsvError
+      ) {
+        if (error instanceof WorkspaceSourceError) {
+          throw error;
+        }
+        throw new WorkspaceSourceError(
+          "invalid_source_data",
+          "The Notion export contains malformed structured data.",
+        );
+      }
+      throw error;
+    }
+  }
+
+  private async parseValidated(
     request: ParseWorkspaceRequest,
   ): Promise<CanonicalWorkspaceGraph> {
     const files = [...request.files].sort((left, right) =>

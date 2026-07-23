@@ -33,9 +33,11 @@ npm run check:public-demo
 npm run serve
 ```
 
-`npm run local-app`을 실행한 뒤 브라우저에서 <http://127.0.0.1:4174>를 열면 **로컬 연결 마법사**를 사용할 수 있습니다. 첫 화면의 **시작**을 누르고 Source, Notion, Microsoft, Target, 향후 흐름을 차례로 확인합니다. 서버를 끝내려면 터미널에서 `Ctrl+C`를 누르세요.
+`npm run local-app`을 실행한 뒤 브라우저에서 <http://127.0.0.1:4174>를 열면 **로컬 연결 마법사**를 사용할 수 있습니다. 첫 화면의 **시작**을 누르고 Source, Notion, Microsoft, Target, 향후 흐름을 차례로 확인합니다. ZIP 설정을 저장한 뒤 **로컬 분석**을 누르면 실제 ZIP을 읽어 canonical graph와 호환성 분석 요약을 만듭니다. 서버를 끝내려면 터미널에서 `Ctrl+C`를 누르세요.
 
-마법사의 ZIP 선택기는 이번 단계에서 **파일 이름과 크기만** 프로세스 메모리로 전달합니다. ZIP 내용은 업로드하거나 분석하지 않습니다. Notion token도 프로세스 메모리에만 있고 URL, HTML, 로그, 파일, `localStorage`, `sessionStorage`, `output/`에 기록하지 않습니다. 화면의 **Notion 토큰 지우기** 또는 **세션 종료 및 모두 삭제**를 사용하거나 서버를 종료하면 해당 메모리 참조를 제거합니다. JavaScript 런타임 특성상 물리 메모리의 즉시 완전 소거를 보장하는 기능은 아닙니다.
+설정 저장 단계에서는 ZIP 이름과 크기만 프로세스 메모리에 둡니다. **로컬 분석**을 누른 뒤에만 브라우저가 ZIP 바이트를 같은 origin의 `127.0.0.1` endpoint로 보냅니다. ZIP은 인터넷이나 Microsoft/Notion 서비스로 전송되지 않고 PC 밖으로 나가지 않습니다. 서버는 요청 body를 통째로 메모리에 모으지 않고 OS 임시 디렉터리의 무작위·독점 파일로 스트리밍한 뒤 성공과 실패 모두에서 삭제합니다.
+
+canonical graph와 migration plan은 해당 프로세스의 세션 메모리에만 남습니다. API와 화면에는 항목·관계·경고 수, 상태별 개수, issue 수, agent task 수, 예상 의미 보존 점수만 반환합니다. ZIP 원문, 원문 content, 절대 경로, token은 응답·로그·`localStorage`·`sessionStorage`·`output/`에 기록하지 않습니다. 화면의 **Notion 토큰 지우기** 또는 **세션 종료 및 모두 삭제**를 사용하거나 서버를 종료하면 세션의 token, graph, plan 참조를 제거합니다. JavaScript 런타임 특성상 물리 메모리의 즉시 완전 소거를 보장하는 기능은 아닙니다.
 
 기존 합성 데모 검토 화면은 `npm run demo` 후 `npm run serve`로 실행하고 <http://127.0.0.1:4173>에서 봅니다. `local-app`과 `serve`는 서로 다른 화면과 포트를 사용합니다.
 
@@ -56,6 +58,7 @@ npm run serve -- --directory output\migration
 - 수식, 롤업, 관계, 지원되지 않는 블록에 대한 검토 작업 만들기
 - 위험한 경로, 너무 큰 입력, 소스 안의 명령문 형태 텍스트를 탐지하기
 - 정제된 HTML 미리보기, JSON 보고서, 로컬 정적 대시보드 만들기
+- localhost 화면에서 실제 ZIP을 임시 파일로 스트리밍하고 기존 ingestion과 호환성 분석 실행하기
 
 데모 화면의 **73%는 실제 자료의 73%가 이전되었다는 뜻이 아닙니다.** 가상 fixture의 항목과 관계에 가중치를 적용해 계산한 **예상 의미 보존 점수**입니다. 실제 이전 완료율, 정확도 또는 Microsoft Loop 반영 결과로 해석하면 안 됩니다.
 
@@ -70,35 +73,51 @@ src/features/
   loop-package/              # 정적 검토 패키지 생성과 로컬 제공
   migration-run/             # 전체 흐름과 CLI
   public-demo/               # 합성 fixture 계약과 공개 산출물 개인정보 검사
-  connection-setup/          # localhost 연결 DTO, 메모리 세션, 단계형 UI
+  connection-setup/          # localhost 연결, bounded ZIP 획득, 메모리 분석 세션, 단계형 UI
 ```
 
 각 기능 안에서 `domain`, `application`, `infrastructure`, `presentation` 계층을 필요한 만큼 나눕니다. 외부 서비스 연결보다 도메인 규칙과 로컬 검토 흐름을 먼저 검증하도록 설계했습니다.
 
 ```mermaid
 flowchart LR
-    Browser["Local browser<br/>presentation"] --> Http["Loopback HTTP adapter<br/>presentation"]
-    Http --> UseCases["Session use cases<br/>application"]
-    UseCases --> Rules["Connection DTO + secret rules<br/>domain"]
-    UseCases --> Memory["In-memory session store<br/>infrastructure"]
+    Browser["Local browser<br/>raw ZIP stream"] --> Http["Loopback HTTP adapter<br/>presentation"]
+    Http --> UseCases["ZIP analysis use case<br/>application"]
+    UseCases --> Temp["Exclusive OS temp file<br/>infrastructure"]
+    Temp --> Zip["ZipWorkspaceSource"]
+    Zip --> Ingest["IngestWorkspace"]
+    Ingest --> Analyze["AnalyzeWorkspace"]
+    UseCases --> Memory["Graph + plan session<br/>process memory"]
     Public["GitHub Pages public demo"] --> Synthetic["Synthetic fixture only"]
-    Public -. "완전 분리: no form / secret / ZIP input" .-> Browser
+    Public -. "완전 분리: no form / local API / ZIP input" .-> Browser
 ```
 
 로컬 마법사는 한 사용자 행동을 한 feature에서 끝까지 연결합니다. 레이어별로 별도 브랜치를 만들지 않으며, dependency는 presentation/infrastructure에서 application/domain 방향으로 향합니다.
 
 ```mermaid
 flowchart LR
-    Source["ZIP metadata 또는<br/>Notion API 설정"] --> Analyze["결정적 분석"]
+    Source["실제 로컬 ZIP<br/>Notion API는 다음 단계"] --> Analyze["결정적 분석"]
     Analyze --> Review["검토·승인"]
     Review --> Lists["Microsoft Lists"]
     Review --> SharePoint["SharePoint"]
     Review --> Planner["Planner"]
     classDef future stroke-dasharray: 5 5
-    class Analyze,Review,Lists,SharePoint,Planner future
+    class Review,Lists,SharePoint,Planner future
 ```
 
-실선은 제품의 장기 흐름을 나타내며, 이번 PR은 Source 설정을 검증해 `configuration_ready` 상태를 만드는 데까지만 구현합니다. 이 상태는 연결 설정만 완료됐다는 뜻이며 ZIP bytes, parsing 결과 또는 Notion API 수집 데이터는 아직 없습니다. 점선 스타일의 입력 획득·분석·승인·배포는 후속 PR 범위입니다.
+ZIP 경로의 실선은 이번 수직 슬라이스에서 실제로 동작합니다. `configuration_ready`는 설정만 저장된 상태이고, `analysis_ready`는 ZIP 바이트를 확보한 뒤 기존 ingestion과 compatibility analysis가 성공한 상태입니다. Notion API 수집, 검토·승인, Microsoft 인증과 배포는 후속 단계입니다.
+
+## 로컬 ZIP 분석 상태와 제한
+
+| 상태 | 뜻 |
+| --- | --- |
+| `uploading` | ZIP을 이 PC의 OS 임시 파일로 받는 중입니다. |
+| `analyzing` | ZIP 검증, canonical graph 생성, 호환성 분석을 실행 중입니다. |
+| `analysis_ready` | 실제 입력으로 graph와 migration plan이 만들어졌습니다. |
+| `failed` | 입력 또는 분석이 실패했으며 graph와 plan을 준비 완료로 저장하지 않았습니다. |
+
+압축된 ZIP과 압축 해제 후 전체 크기는 각각 최대 **200MB**, 파일 수는 최대 **10,000개**입니다. 선언된 `Content-Length`와 chunked 전송의 실제 바이트를 모두 검사합니다. ZIP이 주장하는 크기만 믿지 않고 streaming 해제 중 실제 바이트를 다시 세며, 실제 크기와 CRC도 중앙 디렉터리 값과 대조합니다. 빈 파일, ZIP이 아닌 파일, 손상된 구조·JSON·CSV, 상위 폴더로 벗어나는 경로, 중복 경로, 크기·파일 수 초과는 명시적인 4xx 오류로 중단됩니다. 진행 중인 세션에 같은 분석을 다시 요청하면 두 작업을 섞지 않고 거절합니다.
+
+오류가 나면 Notion에서 ZIP을 다시 내보내거나 큰 workspace를 나누어 시도하세요. 다음 source 단계는 관계 ID와 최신 schema를 보강하는 **읽기 전용 Notion API 수집**이며, 이번 로컬 ZIP 분석에서는 외부 API를 호출하지 않습니다.
 
 ## 연결 용어
 
@@ -118,4 +137,4 @@ flowchart LR
 
 저장소에는 제품 동작을 시험하기 위한 가상 fixture만 포함됩니다. 공개 workflow는 기존 출력물을 재사용하지 않고 이 fixture로만 새 산출물을 생성합니다. `.env.example`은 변수 이름만 보여 주며 실제 값은 비어 있습니다. 현재 프로토타입은 이 토큰들을 사용하지 않습니다.
 
-로컬 연결 마법사 서버는 `127.0.0.1`에만 bind하고 정확한 Host와 same-origin `Origin`을 검사합니다. JSON 요청은 16 KiB로 제한하고 모든 응답에 `no-store`, CSP, framing 차단, referrer 제한 등 보안 헤더를 적용합니다. 이는 공개 서비스용 로그인 경계가 아니라 한 사용자 PC에서 다음 마이그레이션 단계를 준비하기 위한 localhost 경계입니다.
+로컬 연결 마법사 서버는 `127.0.0.1`에만 bind하고 정확한 Host와 same-origin `Origin`을 검사합니다. 설정 JSON의 기존 16KiB 제한은 그대로 유지하며, ZIP endpoint에는 별도의 200MB 압축 크기 상한과 기존 해제 크기·파일 수 상한을 적용합니다. 모든 응답은 `no-store`, CSP, framing 차단, referrer 제한 등 보안 헤더를 사용합니다. 이는 공개 서비스용 로그인 경계가 아니라 한 사용자 PC에서 다음 마이그레이션 단계를 준비하기 위한 localhost 경계입니다.
