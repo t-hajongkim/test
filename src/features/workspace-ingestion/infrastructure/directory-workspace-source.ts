@@ -9,6 +9,7 @@ import type {
 } from "../application/workspace-source.js";
 import {
   assertSourceByteCount,
+  assertSourceEntryByteCount,
   assertSourceFileCount,
   DEFAULT_SOURCE_READ_LIMITS,
   type SourceReadLimits,
@@ -25,7 +26,7 @@ export class DirectoryWorkspaceSource implements WorkspaceSource {
     this.description = `directory:${path.resolve(directory)}`;
   }
 
-  public async readFiles(): Promise<readonly SourceFile[]> {
+  public async *readFiles(): AsyncIterable<SourceFile> {
     const relativePaths = await fastGlob("**/*", {
       cwd: this.directory,
       onlyFiles: true,
@@ -39,13 +40,17 @@ export class DirectoryWorkspaceSource implements WorkspaceSource {
       this.description,
     );
 
-    const files: SourceFile[] = [];
     let totalBytes = 0;
 
     for (const relativePath of relativePaths.sort()) {
       const safePath = assertSafeSourcePath(relativePath);
       const absolutePath = path.join(this.directory, relativePath);
       const fileStat = await stat(absolutePath);
+      assertSourceEntryByteCount(
+        fileStat.size,
+        this.limits,
+        this.description,
+      );
       assertSourceByteCount(
         totalBytes + fileStat.size,
         this.limits,
@@ -53,14 +58,17 @@ export class DirectoryWorkspaceSource implements WorkspaceSource {
       );
 
       const content = await readFile(absolutePath);
+      assertSourceEntryByteCount(
+        content.byteLength,
+        this.limits,
+        this.description,
+      );
       totalBytes += content.byteLength;
       assertSourceByteCount(totalBytes, this.limits, this.description);
-      files.push({
+      yield {
         path: safePath,
         content,
-      });
+      };
     }
-
-    return files;
   }
 }

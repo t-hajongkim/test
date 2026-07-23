@@ -3,7 +3,7 @@ import type { SourceFile } from "./workspace-source.js";
 
 export interface ParseWorkspaceRequest {
   readonly sourceDescription: string;
-  readonly files: readonly SourceFile[];
+  readonly files: AsyncIterable<SourceFile>;
   readonly generatedAt: Date;
 }
 

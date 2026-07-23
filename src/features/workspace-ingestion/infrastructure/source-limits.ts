@@ -1,11 +1,15 @@
+import { WorkspaceSourceError } from "../application/workspace-source-error.js";
+
 export interface SourceReadLimits {
   readonly maxFileCount: number;
+  readonly maxEntryBytes: number;
   readonly maxTotalBytes: number;
   readonly maxArchiveBytes: number;
 }
 
 export const DEFAULT_SOURCE_READ_LIMITS: SourceReadLimits = {
   maxFileCount: 10_000,
+  maxEntryBytes: 16 * 1024 * 1024,
   maxTotalBytes: 200 * 1024 * 1024,
   maxArchiveBytes: 200 * 1024 * 1024,
 };
@@ -16,7 +20,8 @@ export function assertSourceFileCount(
   description: string,
 ): void {
   if (fileCount > limits.maxFileCount) {
-    throw new Error(
+    throw new WorkspaceSourceError(
+      "file_count_limit",
       `${description} contains more than ${limits.maxFileCount} files.`,
     );
   }
@@ -28,8 +33,22 @@ export function assertSourceByteCount(
   description: string,
 ): void {
   if (byteCount > limits.maxTotalBytes) {
-    throw new Error(
+    throw new WorkspaceSourceError(
+      "uncompressed_size_limit",
       `${description} exceeds ${limits.maxTotalBytes} uncompressed bytes.`,
+    );
+  }
+}
+
+export function assertSourceEntryByteCount(
+  byteCount: number,
+  limits: SourceReadLimits,
+  description: string,
+): void {
+  if (byteCount > limits.maxEntryBytes) {
+    throw new WorkspaceSourceError(
+      "uncompressed_size_limit",
+      `${description} entry exceeds ${limits.maxEntryBytes} uncompressed bytes.`,
     );
   }
 }
@@ -40,7 +59,8 @@ export function assertArchiveByteCount(
   description: string,
 ): void {
   if (byteCount > limits.maxArchiveBytes) {
-    throw new Error(
+    throw new WorkspaceSourceError(
+      "archive_too_large",
       `${description} exceeds ${limits.maxArchiveBytes} compressed bytes.`,
     );
   }

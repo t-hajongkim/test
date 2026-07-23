@@ -7,9 +7,14 @@ import {
 
 import { ZodError } from "zod";
 
+import {
+  LocalZipAnalysisError,
+  type AnalyzeLocalZip,
+} from "../application/analyze-local-zip.js";
 import type { ClearNotionToken } from "../application/clear-notion-token.js";
 import {
   ConnectionSessionNotFoundError,
+  ConnectionAnalysisInProgressError,
   type ConnectionSessionStore,
 } from "../application/connection-session-store.js";
 import type { EndConnectionSession } from "../application/end-connection-session.js";
@@ -47,6 +52,7 @@ export interface LocalConnectionAppServices {
   readonly getSummary: GetConnectionSessionSummary;
   readonly clearNotionToken: ClearNotionToken;
   readonly endSession: EndConnectionSession;
+  readonly analyzeLocalZip: AnalyzeLocalZip;
 }
 
 export interface LocalConnectionHttpServer {
@@ -63,7 +69,7 @@ export async function startLocalConnectionHttpServer(
   const server = createServer((request, response) => {
     void handleRequest(request, response, services, origin).catch(
       (error: unknown) => {
-        handleRequestFailure(error, response, logger);
+        handleRequestFailure(error, request, response, logger);
       },
     );
   });
@@ -159,6 +165,23 @@ async function handleRequest(
     sendJson(response, 200, summary);
     return;
   }
+  if (
+    requestUrl.pathname ===
+    "/api/v1/connection-session/local-zip-analysis"
+  ) {
+    assertMethod(method, ["POST"]);
+    assertZipContentType(request);
+    const sessionId = requireSessionId(request);
+    const contentLength = readContentLength(request);
+    const summary = await services.analyzeLocalZip.execute({
+      sessionId,
+      content: request,
+      cancelContent: () => request.destroy(),
+      ...(contentLength !== undefined ? { contentLength } : {}),
+    });
+    sendJson(response, 200, summary);
+    return;
+  }
 
   throw new HttpRequestError(404, "NOT_FOUND", "Route not found.");
 }
@@ -246,6 +269,17 @@ function assertJsonContentType(request: IncomingMessage): void {
   }
 }
 
+function assertZipContentType(request: IncomingMessage): void {
+  const contentType = request.headers["content-type"] ?? "";
+  if (!/^application\/zip(?:\s*;|$)/iu.test(contentType)) {
+    throw new HttpRequestError(
+      415,
+      "UNSUPPORTED_MEDIA_TYPE",
+      "Content-Type must be application/zip.",
+    );
+  }
+}
+
 async function assertEmptyBody(request: IncomingMessage): Promise<void> {
   const body = await readBody(request, 1);
   if (body.byteLength !== 0) {
@@ -281,17 +315,8 @@ async function readBody(
   request: IncomingMessage,
   maxBytes: number,
 ): Promise<Buffer> {
-  const declaredLength = request.headers["content-length"];
-  if (declaredLength !== undefined) {
-    const parsedLength = Number(declaredLength);
-    if (!Number.isSafeInteger(parsedLength) || parsedLength < 0) {
-      request.resume();
-      throw new HttpRequestError(
-        400,
-        "INVALID_CONTENT_LENGTH",
-        "Content-Length is invalid.",
-      );
-    }
+  const parsedLength = readContentLength(request);
+  if (parsedLength !== undefined) {
     if (parsedLength > maxBytes) {
       request.resume();
       throw payloadTooLarge();
@@ -310,6 +335,25 @@ async function readBody(
     chunks.push(buffer);
   }
   return Buffer.concat(chunks, byteCount);
+}
+
+function readContentLength(
+  request: IncomingMessage,
+): number | undefined {
+  const declaredLength = request.headers["content-length"];
+  if (declaredLength === undefined) {
+    return undefined;
+  }
+  const parsedLength = Number(declaredLength);
+  if (!Number.isSafeInteger(parsedLength) || parsedLength < 0) {
+    request.resume();
+    throw new HttpRequestError(
+      400,
+      "INVALID_CONTENT_LENGTH",
+      "Content-Length is invalid.",
+    );
+  }
+  return parsedLength;
 }
 
 function payloadTooLarge(): HttpRequestError {
@@ -378,6 +422,7 @@ function sendText(
 
 function handleRequestFailure(
   error: unknown,
+  request: IncomingMessage,
   response: ServerResponse,
   logger: LocalConnectionAppLogger,
 ): void {
@@ -386,6 +431,7 @@ function handleRequestFailure(
     return;
   }
 
+  closeIncompleteRequestAfterResponse(request, response);
   const requestError = mapRequestError(error);
   if (!requestError) {
     const errorName = error instanceof Error ? error.name : "UnknownError";
@@ -399,6 +445,18 @@ function handleRequestFailure(
       },
     });
     return;
+  }
+
+  function closeIncompleteRequestAfterResponse(
+    request: IncomingMessage,
+    response: ServerResponse,
+  ): void {
+    if (request.complete || request.destroyed) {
+      return;
+    }
+    response.setHeader("Connection", "close");
+    response.once("finish", () => request.destroy());
+    request.resume();
   }
 
   if (requestError.allow) {
@@ -424,6 +482,13 @@ function mapRequestError(error: unknown): HttpRequestError | undefined {
       "Connection session was not found.",
     );
   }
+  if (error instanceof ConnectionAnalysisInProgressError) {
+    return new HttpRequestError(
+      409,
+      "ZIP_ANALYSIS_IN_PROGRESS",
+      "이미 로컬 분석이 진행 중입니다. 현재 분석이 끝난 뒤 다시 시도해 주세요.",
+    );
+  }
   if (error instanceof ZodError) {
     return new HttpRequestError(
       422,
@@ -434,6 +499,17 @@ function mapRequestError(error: unknown): HttpRequestError | undefined {
         message: issue.message,
       })),
     );
+  }
+  if (error instanceof LocalZipAnalysisError) {
+    const status =
+      error.kind === "conflict"
+        ? 409
+        : error.kind === "payload_too_large"
+          ? 413
+          : error.kind === "unavailable"
+            ? 503
+            : 422;
+    return new HttpRequestError(status, error.code, error.message);
   }
   return undefined;
 }

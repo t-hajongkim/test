@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-07-23T13:50:08.4666308+09:00",
+  "updated_at": "2026-07-23T16:09:35.6252646+09:00",
   "decisions": [
     {
       "id": "D-001",
@@ -104,6 +104,22 @@
       "decision": "Expose writable connection setup only through a separate 127.0.0.1 interactive app, keep Notion secrets in a process-memory session with explicit deletion and termination, and keep the public Pages demo synthetic and free of connection inputs.",
       "rationale": "The user explicitly required a localhost security boundary and no secret persistence. The implemented vertical slice validates the complete setup DTO, enforces Host, Origin, request-size, no-store, and security-header contracts, and prevents local writable controls from entering public artifacts.",
       "source": "User instruction and implemented local connection wizard"
+    },
+    {
+      "id": "D-014",
+      "status": "accepted",
+      "decided_at": "2026-07-23T14:34:45.0107364+09:00",
+      "decision": "Acquire selected Notion ZIP bytes only through an explicit same-origin localhost action, stream them to an exclusive random OS temp file, run the existing deterministic ingestion and compatibility analysis, and retain only the resulting graph and plan in the process-memory session.",
+      "rationale": "The second vertical slice is implemented with declared and actual byte limits, streaming inflate independent of forged ZIP size headers, CRC and structure checks, traversal, duplicate and file-count guards, truthful state transitions, summary-only responses, and retryable success/failure cleanup.",
+      "source": "User instruction and implemented local ZIP analysis contracts"
+    },
+    {
+      "id": "D-015",
+      "status": "accepted",
+      "decided_at": "2026-07-23T16:09:35.6252646+09:00",
+      "decision": "Parse staged ZIP archives without archive-wide or raw workspace-wide buffering: validate bounded central and local metadata, stream compressed ranges through fflate decoders with Node backpressure, cap each entry at 16 MiB, and let the parser consume one validated entry at a time.",
+      "rationale": "The reviewer identified that temp-file upload staging did not prevent the parser from loading a 200 MiB archive and all extracted buffers at once. The replacement is implemented with signed and unsigned descriptor support, actual byte and CRC checks, cancellation cleanup, malformed structured-data redaction, and passing regression and full validation suites.",
+      "source": "Reviewer requirement and implemented streaming ingestion evidence"
     }
   ]
 }

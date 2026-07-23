@@ -1,10 +1,15 @@
 import { randomBytes } from "node:crypto";
 
 import {
+  ConnectionAnalysisInProgressError,
+  ConnectionAnalysisStateError,
   ConnectionSessionNotFoundError,
+  ConnectionZipConfigurationRequiredError,
   type ConnectionSessionRecord,
   type ConnectionSessionStore,
 } from "../application/connection-session-store.js";
+import type { MigrationPlan } from "../../compatibility-analysis/domain/migration-plan.js";
+import type { CanonicalWorkspaceGraph } from "../../workspace-ingestion/domain/canonical-graph.js";
 import type {
   ConnectionConfiguration,
   NotionToken,
@@ -39,7 +44,13 @@ export class InMemoryConnectionSessionStore implements ConnectionSessionStore {
     configuration: ConnectionConfiguration,
     notionToken?: NotionToken,
   ): Promise<ConnectionSessionRecord> {
-    this.requireSession(sessionId);
+    const current = this.requireSession(sessionId);
+    if (
+      current.analysis?.state === "uploading" ||
+      current.analysis?.state === "analyzing"
+    ) {
+      throw new ConnectionAnalysisInProgressError();
+    }
     const session: ConnectionSessionRecord = {
       id: sessionId,
       configuration,
@@ -58,6 +69,78 @@ export class InMemoryConnectionSessionStore implements ConnectionSessionStore {
       ...(current.configuration
         ? { configuration: current.configuration }
         : {}),
+      ...(current.analysis ? { analysis: current.analysis } : {}),
+    };
+    this.#sessions.set(sessionId, session);
+    return session;
+  }
+
+  public async beginZipAnalysis(
+    sessionId: string,
+  ): Promise<ConnectionSessionRecord> {
+    const current = this.requireSession(sessionId);
+    if (current.configuration?.source.kind !== "zip") {
+      throw new ConnectionZipConfigurationRequiredError();
+    }
+    if (
+      current.analysis?.state === "uploading" ||
+      current.analysis?.state === "analyzing"
+    ) {
+      throw new ConnectionAnalysisInProgressError();
+    }
+    const session: ConnectionSessionRecord = {
+      ...current,
+      analysis: { state: "uploading" },
+    };
+    this.#sessions.set(sessionId, session);
+    return session;
+  }
+
+  public async markZipAnalysisRunning(
+    sessionId: string,
+  ): Promise<ConnectionSessionRecord> {
+    const current = this.requireSession(sessionId);
+    if (current.analysis?.state !== "uploading") {
+      throw new ConnectionAnalysisStateError();
+    }
+    const session: ConnectionSessionRecord = {
+      ...current,
+      analysis: { state: "analyzing" },
+    };
+    this.#sessions.set(sessionId, session);
+    return session;
+  }
+
+  public async completeZipAnalysis(
+    sessionId: string,
+    graph: CanonicalWorkspaceGraph,
+    plan: MigrationPlan,
+  ): Promise<ConnectionSessionRecord> {
+    const current = this.requireSession(sessionId);
+    if (current.analysis?.state !== "analyzing") {
+      throw new ConnectionAnalysisStateError();
+    }
+    const session: ConnectionSessionRecord = {
+      ...current,
+      analysis: { state: "ready", graph, plan },
+    };
+    this.#sessions.set(sessionId, session);
+    return session;
+  }
+
+  public async failZipAnalysis(
+    sessionId: string,
+  ): Promise<ConnectionSessionRecord> {
+    const current = this.requireSession(sessionId);
+    if (
+      current.analysis?.state !== "uploading" &&
+      current.analysis?.state !== "analyzing"
+    ) {
+      throw new ConnectionAnalysisStateError();
+    }
+    const session: ConnectionSessionRecord = {
+      ...current,
+      analysis: { state: "failed" },
     };
     this.#sessions.set(sessionId, session);
     return session;

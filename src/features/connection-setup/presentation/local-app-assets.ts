@@ -26,8 +26,8 @@ export const LOCAL_APP_HTML = `<!doctype html>
       <p class="lead">Notion 입력과 Microsoft 365 대상을 안전하게 정리한 뒤, 분석과 사람의 승인을 거쳐 배포하는 흐름을 안내합니다.</p>
       <button class="primary large" type="button" data-action="start-session">시작</button>
       <div class="scope-note">
-        <strong>이번 기반 단계의 범위</strong>
-        <span>연결 정보 안내·검증·메모리 저장만 수행합니다. ZIP 내용, Notion API, Microsoft Graph, 실제 배포는 실행하지 않습니다.</span>
+        <strong>이번 로컬 분석의 범위</strong>
+        <span>Notion ZIP은 이 PC의 localhost 분석기에만 전달됩니다. Notion API, Microsoft Graph, 승인, 실제 배포는 실행하지 않습니다.</span>
       </div>
     </section>
 
@@ -44,7 +44,7 @@ export const LOCAL_APP_HTML = `<!doctype html>
         <section class="step-card" data-step="source" data-step-index="0">
           <p class="eyebrow">STEP 1</p>
           <h2>어디에서 가져올까요?</h2>
-          <p class="description">이번에는 한 가지 source를 고릅니다. 실제 수집과 분석은 후속 단계에서 연결됩니다.</p>
+          <p class="description">이번에는 한 가지 source를 고릅니다. ZIP은 설정 저장 뒤 명시적으로 로컬 분석을 시작할 때만 전송됩니다.</p>
           <div class="choice-grid">
             <label class="choice">
               <input type="radio" name="sourceKind" value="zip" checked>
@@ -58,7 +58,7 @@ export const LOCAL_APP_HTML = `<!doctype html>
           <div class="field" data-zip-fields>
             <label for="zip-file">Notion ZIP 파일</label>
             <input id="zip-file" type="file" accept=".zip,application/zip">
-            <small>파일 이름과 크기만 서버 메모리로 전달합니다. ZIP 바이트는 업로드하거나 분석하지 않습니다.</small>
+            <small>설정 저장에는 이름과 크기만 사용합니다. 로컬 분석을 누르면 ZIP 바이트가 같은 PC의 127.0.0.1로만 전송되며 PC 밖으로 전송되지 않습니다.</small>
           </div>
         </section>
 
@@ -139,8 +139,8 @@ export const LOCAL_APP_HTML = `<!doctype html>
             <article><span>3</span><div><strong>배포</strong><p>승인된 항목만 Lists, SharePoint, Planner adapter로 전달합니다.</p></div></article>
           </div>
           <div class="scope-note compact">
-            <strong>아직 실행되지 않습니다.</strong>
-            <span>이번 저장은 연결 설정만 완료합니다. ZIP 내용이나 Notion 데이터는 아직 획득하지 않았습니다.</span>
+            <strong>설정 저장과 분석은 분리되어 있습니다.</strong>
+            <span>설정을 저장한 뒤 로컬 분석을 눌러야 ZIP을 획득하고 실제 분석을 시작합니다. 검토 승인과 Microsoft 배포는 계속 비활성화됩니다.</span>
           </div>
         </section>
 
@@ -153,10 +153,12 @@ export const LOCAL_APP_HTML = `<!doctype html>
 
       <section class="summary" data-summary hidden>
         <p class="eyebrow">SESSION MEMORY</p>
-        <h2>연결 설정이 저장되었습니다.</h2>
-        <p>민감한 token 값은 표시하지 않습니다. 분석 입력 데이터는 아직 없으며 분석과 배포도 시작되지 않았습니다.</p>
+        <h2>로컬 세션 상태</h2>
+        <p>민감한 token, ZIP 원문, 임시 파일 경로는 표시하지 않습니다. <code>analysis_ready</code>는 ZIP 획득과 실제 분석이 모두 끝난 경우에만 표시됩니다.</p>
+        <div class="analysis-status" data-analysis-status aria-live="polite">설정을 저장한 뒤 로컬 분석을 시작하세요.</div>
         <pre data-summary-content></pre>
         <div class="summary-actions">
+          <button class="primary" type="button" data-action="analyze-local-zip">로컬 분석</button>
           <button class="secondary" type="button" data-action="clear-token">Notion 토큰 지우기</button>
           <button class="danger" type="button" data-action="end-session">세션 종료 및 모두 삭제</button>
         </div>
@@ -269,6 +271,8 @@ h2 { margin: 0 0 12px; font-size: clamp(28px, 4vw, 42px); letter-spacing: -.04em
 .flow p { margin: 5px 0 0; color: var(--muted); }
 .summary { min-height: 0; margin-top: 22px; }
 .summary pre { overflow: auto; padding: 18px; border: 1px solid var(--line); border-radius: 14px; color: #c4f1ff; background: #06101c; line-height: 1.55; }
+.analysis-status { margin: 18px 0; padding: 14px 16px; border: 1px solid rgba(56, 189, 248, .35); border-radius: 12px; color: #bae6fd; background: rgba(14, 165, 233, .1); }
+.primary:disabled, .secondary:disabled, .danger:disabled { cursor: wait; opacity: .55; }
 .summary-actions { display: flex; gap: 12px; flex-wrap: wrap; }
 @media (max-width: 760px) {
   .stepper { grid-template-columns: 1fr; }
@@ -295,6 +299,16 @@ const summary = document.querySelector("[data-summary]");
 const summaryContent = document.querySelector("[data-summary-content]");
 const notionTokenInput = document.getElementById("notion-token");
 const zipInput = document.getElementById("zip-file");
+const analyzeLocalZipButton = document.querySelector('[data-action="analyze-local-zip"]');
+const analysisStatus = document.querySelector("[data-analysis-status]");
+const analysisStatusLabels = {
+  uploading: "ZIP을 이 PC의 임시 파일로 안전하게 받는 중입니다.",
+  analyzing: "ZIP 구조와 호환성을 실제로 분석하는 중입니다.",
+  analysis_ready: "로컬 분석이 완료되었습니다. 예상 의미 보존 점수와 요약을 확인하세요.",
+  failed: "로컬 분석이 실패했습니다. 아래 오류를 확인한 뒤 파일을 다시 선택해 주세요.",
+  configuration_ready: "설정이 저장되었습니다. ZIP을 확인한 뒤 로컬 분석을 누르세요.",
+  collecting_configuration: "먼저 연결 설정을 완료해 주세요."
+};
 let currentStep = 0;
 
 function showError(message) {
@@ -416,6 +430,9 @@ function renderSummary(value) {
   summary.hidden = false;
   const clearTokenButton = document.querySelector('[data-action="clear-token"]');
   clearTokenButton.hidden = !value.notionTokenPresent;
+  analyzeLocalZipButton.hidden = !value.source || value.source.kind !== "zip";
+  analyzeLocalZipButton.disabled = value.status === "uploading" || value.status === "analyzing";
+  analysisStatus.textContent = analysisStatusLabels[value.status] || "현재 로컬 세션 상태를 확인했습니다.";
 }
 
 document.querySelector('[data-action="start-session"]').addEventListener("click", async function () {
@@ -442,6 +459,55 @@ previousButton.addEventListener("click", function () {
 nextButton.addEventListener("click", function () {
   if (validateCurrentStep()) {
     showStep(currentStep + 1);
+  }
+});
+
+analyzeLocalZipButton.addEventListener("click", async function () {
+  clearError();
+  const file = zipInput.files[0];
+  if (!file) {
+    showError("분석할 Notion ZIP 파일을 다시 선택해 주세요.");
+    return;
+  }
+
+  analyzeLocalZipButton.disabled = true;
+  analysisStatus.textContent = analysisStatusLabels.uploading;
+  let stopped = false;
+  let pollTimer;
+  async function pollStatus() {
+    try {
+      const polledSummary = await request("", { method: "GET" });
+      if (!stopped) {
+        renderSummary(polledSummary);
+      }
+    } catch (error) {
+      if (!stopped) {
+        showError(error instanceof Error ? error.message : "분석 상태를 확인하지 못했습니다.");
+      }
+    }
+    if (!stopped) {
+      pollTimer = window.setTimeout(pollStatus, 250);
+    }
+  }
+  pollTimer = window.setTimeout(pollStatus, 250);
+
+  try {
+    const value = await request("/local-zip-analysis", {
+      method: "POST",
+      headers: { "Content-Type": "application/zip" },
+      body: file
+    });
+    renderSummary(value);
+  } catch (error) {
+    try {
+      renderSummary(await request("", { method: "GET" }));
+    } catch (summaryError) {
+      showError(summaryError instanceof Error ? summaryError.message : "실패 상태를 확인하지 못했습니다.");
+    }
+    showError(error instanceof Error ? error.message : "로컬 분석에 실패했습니다.");
+  } finally {
+    stopped = true;
+    window.clearTimeout(pollTimer);
   }
 });
 
