@@ -2,6 +2,7 @@ import path from "node:path";
 
 import { Command, Option } from "commander";
 
+import { startLocalConnectionApp } from "../../connection-setup/presentation/local-app-composition-root.js";
 import { startDashboardServer } from "../../loop-package/infrastructure/static-dashboard-server.js";
 import { GeneratePublicDemo } from "../../public-demo/application/generate-public-demo.js";
 import { FileSystemPublicArtifactAuditor } from "../../public-demo/infrastructure/file-system-public-artifact-auditor.js";
@@ -69,6 +70,35 @@ export async function runCli(argv: readonly string[]): Promise<void> {
         path.resolve(options.directory),
       );
       process.stdout.write("Public demo privacy audit passed.\n");
+    });
+
+  program
+    .command("local-app")
+    .description("Start the localhost-only connection setup wizard.")
+    .addOption(
+      new Option("-p, --port <number>", "Local port")
+        .default("4174")
+        .argParser(parsePort),
+    )
+    .action(async (options: { port: number }) => {
+      const app = await startLocalConnectionApp({ port: options.port });
+      process.stdout.write(`Notion2Loop local app: ${app.origin}\n`);
+
+      const close = (): void => {
+        void app
+          .close()
+          .then(() => process.exit(0))
+          .catch((error: unknown) => {
+            const errorName =
+              error instanceof Error ? error.name : "UnknownError";
+            process.stderr.write(
+              `Local app shutdown failed: ${errorName}\n`,
+            );
+            process.exit(1);
+          });
+      };
+      process.once("SIGINT", close);
+      process.once("SIGTERM", close);
     });
 
   program

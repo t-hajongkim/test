@@ -12,6 +12,7 @@
     "clean": "node scripts/clean.mjs",
     "dev": "tsx src/index.ts",
     "demo": "tsx src/index.ts demo --output output/demo",
+    "local-app": "tsx src/index.ts local-app --port 4174",
     "public-demo": "tsx src/index.ts public-demo --output output/demo",
     "check:public-demo": "tsx src/index.ts check-public-demo --directory output/demo",
     "migrate": "tsx src/index.ts migrate",

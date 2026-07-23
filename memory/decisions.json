@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-07-23T10:24:00+09:00",
+  "updated_at": "2026-07-23T13:50:08.4666308+09:00",
   "decisions": [
     {
       "id": "D-001",
@@ -96,6 +96,14 @@
       "decision": "Publish only a freshly generated synthetic fixture through the dedicated public-demo profile; clean the destination first, replace environment-specific metadata through typed generation inputs, and reject privacy or secret patterns before artifact upload.",
       "rationale": "The user explicitly required a hard boundary between local migrations and a sanitized GitHub Pages demo, and the boundary is implemented with regression tests while ordinary local migration metadata remains unchanged.",
       "source": "User instruction and implemented public demo privacy contract"
+    },
+    {
+      "id": "D-013",
+      "status": "accepted",
+      "decided_at": "2026-07-23T13:50:08.4666308+09:00",
+      "decision": "Expose writable connection setup only through a separate 127.0.0.1 interactive app, keep Notion secrets in a process-memory session with explicit deletion and termination, and keep the public Pages demo synthetic and free of connection inputs.",
+      "rationale": "The user explicitly required a localhost security boundary and no secret persistence. The implemented vertical slice validates the complete setup DTO, enforces Host, Origin, request-size, no-store, and security-header contracts, and prevents local writable controls from entering public artifacts.",
+      "source": "User instruction and implemented local connection wizard"
     }
   ]
 }

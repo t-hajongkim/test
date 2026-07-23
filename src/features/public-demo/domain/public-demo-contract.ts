@@ -44,12 +44,28 @@ const riskPatterns: readonly {
     pattern:
       /(?:github_pat_[A-Za-z0-9_]{20,}|gh[pousr]_[A-Za-z0-9]{20,}|(?:sk|ntn)_[A-Za-z0-9_-]{20,}|-----BEGIN [A-Z ]*PRIVATE KEY-----|["']?(?:api[_-]?key|token|secret|password)["']?\s*[:=]\s*["']?[A-Za-z0-9_./+=-]{8,})/i,
   },
+  {
+    description: "writable local connection UI",
+    pattern:
+      /<(?:form|textarea|select)\b|\/api\/v1\/connection-session\b|notion2loop_session\b|\b(?:localStorage|sessionStorage|indexedDB)\b/i,
+  },
 ];
 
 export function findPublicDataRisks(value: string): readonly PublicDataRisk[] {
-  return riskPatterns
+  const risks = riskPatterns
     .filter(({ pattern }) => pattern.test(value))
     .map(({ description }) => ({ description }));
+  const inputTags = value.match(/<input\b[^>]*>/giu) ?? [];
+  if (
+    inputTags.some(
+      (tag) =>
+        !/\bdisabled\b/iu.test(tag) ||
+        !/\btype\s*=\s*["']?checkbox\b/iu.test(tag),
+    )
+  ) {
+    risks.push({ description: "writable local connection UI" });
+  }
+  return risks;
 }
 
 export function findSensitiveJsonRisks(

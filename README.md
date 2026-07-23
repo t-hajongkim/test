@@ -26,13 +26,18 @@ npm ci
 npm run typecheck
 npm test
 npm run build
+npm run local-app
 npm run demo
 npm run public-demo
 npm run check:public-demo
 npm run serve
 ```
 
-브라우저에서 <http://127.0.0.1:4173>을 열면 데모 검토 화면을 볼 수 있습니다. 서버를 끝내려면 터미널에서 `Ctrl+C`를 누르세요.
+`npm run local-app`을 실행한 뒤 브라우저에서 <http://127.0.0.1:4174>를 열면 **로컬 연결 마법사**를 사용할 수 있습니다. 첫 화면의 **시작**을 누르고 Source, Notion, Microsoft, Target, 향후 흐름을 차례로 확인합니다. 서버를 끝내려면 터미널에서 `Ctrl+C`를 누르세요.
+
+마법사의 ZIP 선택기는 이번 단계에서 **파일 이름과 크기만** 프로세스 메모리로 전달합니다. ZIP 내용은 업로드하거나 분석하지 않습니다. Notion token도 프로세스 메모리에만 있고 URL, HTML, 로그, 파일, `localStorage`, `sessionStorage`, `output/`에 기록하지 않습니다. 화면의 **Notion 토큰 지우기** 또는 **세션 종료 및 모두 삭제**를 사용하거나 서버를 종료하면 해당 메모리 참조를 제거합니다. JavaScript 런타임 특성상 물리 메모리의 즉시 완전 소거를 보장하는 기능은 아닙니다.
+
+기존 합성 데모 검토 화면은 `npm run demo` 후 `npm run serve`로 실행하고 <http://127.0.0.1:4173>에서 봅니다. `local-app`과 `serve`는 서로 다른 화면과 포트를 사용합니다.
 
 직접 준비한 로컬 내보내기를 분석하려면 다음 명령을 사용할 수 있습니다. 입력 폴더나 ZIP은 저장소 밖에 두는 것을 권장합니다.
 
@@ -65,9 +70,46 @@ src/features/
   loop-package/              # 정적 검토 패키지 생성과 로컬 제공
   migration-run/             # 전체 흐름과 CLI
   public-demo/               # 합성 fixture 계약과 공개 산출물 개인정보 검사
+  connection-setup/          # localhost 연결 DTO, 메모리 세션, 단계형 UI
 ```
 
 각 기능 안에서 `domain`, `application`, `infrastructure`, `presentation` 계층을 필요한 만큼 나눕니다. 외부 서비스 연결보다 도메인 규칙과 로컬 검토 흐름을 먼저 검증하도록 설계했습니다.
+
+```mermaid
+flowchart LR
+    Browser["Local browser<br/>presentation"] --> Http["Loopback HTTP adapter<br/>presentation"]
+    Http --> UseCases["Session use cases<br/>application"]
+    UseCases --> Rules["Connection DTO + secret rules<br/>domain"]
+    UseCases --> Memory["In-memory session store<br/>infrastructure"]
+    Public["GitHub Pages public demo"] --> Synthetic["Synthetic fixture only"]
+    Public -. "완전 분리: no form / secret / ZIP input" .-> Browser
+```
+
+로컬 마법사는 한 사용자 행동을 한 feature에서 끝까지 연결합니다. 레이어별로 별도 브랜치를 만들지 않으며, dependency는 presentation/infrastructure에서 application/domain 방향으로 향합니다.
+
+```mermaid
+flowchart LR
+    Source["ZIP metadata 또는<br/>Notion API 설정"] --> Analyze["결정적 분석"]
+    Analyze --> Review["검토·승인"]
+    Review --> Lists["Microsoft Lists"]
+    Review --> SharePoint["SharePoint"]
+    Review --> Planner["Planner"]
+    classDef future stroke-dasharray: 5 5
+    class Analyze,Review,Lists,SharePoint,Planner future
+```
+
+실선은 제품의 장기 흐름을 나타내며, 이번 PR은 Source 설정을 검증해 `configuration_ready` 상태를 만드는 데까지만 구현합니다. 이 상태는 연결 설정만 완료됐다는 뜻이며 ZIP bytes, parsing 결과 또는 Notion API 수집 데이터는 아직 없습니다. 점선 스타일의 입력 획득·분석·승인·배포는 후속 PR 범위입니다.
+
+## 연결 용어
+
+| 용어 | 쉬운 설명 |
+| --- | --- |
+| Notion token | Notion integration이 허용된 페이지를 읽을 때 쓰는 비밀 열쇠입니다. 공유하거나 저장소에 올리면 안 됩니다. |
+| Tenant ID | 회사나 조직의 Microsoft Entra 디렉터리를 구분하는 ID입니다. |
+| Client ID | Microsoft에 등록한 이 마이그레이션 앱을 구분하는 ID입니다. secret 자체가 아닙니다. |
+| delegated login | 사용자가 직접 로그인하고 동의한 권한 범위 안에서 앱이 사용자를 대신해 작업하는 방식입니다. |
+| Microsoft Graph | Lists, SharePoint, Planner 같은 Microsoft 365 서비스에 접근하는 공식 API입니다. |
+| 권한 동의 | 앱이 어떤 데이터와 작업에 접근할 수 있는지 사용자가 확인하고 허용하는 절차입니다. 이번 단계에서는 실행하지 않습니다. |
 
 ## 보안과 개인정보
 
@@ -75,3 +117,5 @@ src/features/
 > 실제 Notion 내보내기, ZIP, 회사 문서, 개인정보, `.env` 파일, API 토큰 또는 인증 키를 커밋하지 마세요. `output/migration`이나 기존 `output/` 파일을 GitHub Pages에 수동 업로드하지 마세요. 한번 공개 저장소나 Pages에 올라간 비밀은 파일을 지워도 기록에 남을 수 있습니다.
 
 저장소에는 제품 동작을 시험하기 위한 가상 fixture만 포함됩니다. 공개 workflow는 기존 출력물을 재사용하지 않고 이 fixture로만 새 산출물을 생성합니다. `.env.example`은 변수 이름만 보여 주며 실제 값은 비어 있습니다. 현재 프로토타입은 이 토큰들을 사용하지 않습니다.
+
+로컬 연결 마법사 서버는 `127.0.0.1`에만 bind하고 정확한 Host와 same-origin `Origin`을 검사합니다. JSON 요청은 16 KiB로 제한하고 모든 응답에 `no-store`, CSP, framing 차단, referrer 제한 등 보안 헤더를 적용합니다. 이는 공개 서비스용 로그인 경계가 아니라 한 사용자 PC에서 다음 마이그레이션 단계를 준비하기 위한 localhost 경계입니다.
