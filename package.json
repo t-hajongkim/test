@@ -1,0 +1,37 @@
+{
+  "name": "notion2loop",
+  "version": "0.1.0",
+  "private": true,
+  "description": "Agent-assisted Notion to Microsoft Loop migration prototype",
+  "type": "module",
+  "engines": {
+    "node": ">=24 <25"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "clean": "node scripts/clean.mjs",
+    "dev": "tsx src/index.ts",
+    "demo": "tsx src/index.ts demo --output output/demo",
+    "migrate": "tsx src/index.ts migrate",
+    "serve": "tsx src/index.ts serve --directory output/demo --port 4173",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "commander": "^14.0.0",
+    "csv-parse": "^6.1.0",
+    "fast-glob": "^3.3.3",
+    "fflate": "^0.8.2",
+    "marked": "^16.1.1",
+    "sanitize-html": "^2.17.0",
+    "zod": "^4.0.10"
+  },
+  "devDependencies": {
+    "@types/node": "^24.1.0",
+    "@types/sanitize-html": "^2.16.0",
+    "tsx": "^4.20.3",
+    "typescript": "^5.8.3",
+    "vitest": "^3.2.4"
+  }
+}

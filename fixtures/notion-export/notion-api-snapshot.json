@@ -1,0 +1,233 @@
+{
+  "schemaVersion": "1.0",
+  "workspace": {
+    "id": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+    "title": "Notion2Loop Demo"
+  },
+  "pages": [
+    {
+      "id": "11111111111111111111111111111111",
+      "title": "Notion2Loop Demo"
+    }
+  ],
+  "databases": [
+    {
+      "id": "22222222222222222222222222222222",
+      "title": "Projects",
+      "parentId": "11111111111111111111111111111111",
+      "properties": [
+        {
+          "id": "project-title",
+          "name": "Name",
+          "type": "title"
+        },
+        {
+          "id": "project-status",
+          "name": "Status",
+          "type": "status"
+        },
+        {
+          "id": "project-owner",
+          "name": "Owner",
+          "type": "person"
+        },
+        {
+          "id": "project-progress",
+          "name": "Progress",
+          "type": "number"
+        },
+        {
+          "id": "project-tasks",
+          "name": "Tasks",
+          "type": "relation",
+          "relationTargetDatabaseId": "55555555555555555555555555555555"
+        },
+        {
+          "id": "project-health",
+          "name": "Health",
+          "type": "formula",
+          "formulaExpression": "if(prop(\"Progress\") >= 50, \"On track\", \"At risk\")"
+        },
+        {
+          "id": "project-completed",
+          "name": "Completed tasks",
+          "type": "rollup",
+          "rollup": {
+            "relationPropertyName": "Tasks",
+            "targetPropertyName": "Status",
+            "function": "count_values"
+          }
+        }
+      ]
+    },
+    {
+      "id": "55555555555555555555555555555555",
+      "title": "Tasks",
+      "parentId": "11111111111111111111111111111111",
+      "properties": [
+        {
+          "id": "task-title",
+          "name": "Name",
+          "type": "title"
+        },
+        {
+          "id": "task-status",
+          "name": "Status",
+          "type": "status"
+        },
+        {
+          "id": "task-project",
+          "name": "Project",
+          "type": "relation",
+          "relationTargetDatabaseId": "22222222222222222222222222222222"
+        },
+        {
+          "id": "task-due",
+          "name": "Due",
+          "type": "date"
+        },
+        {
+          "id": "task-effort",
+          "name": "Effort",
+          "type": "number"
+        },
+        {
+          "id": "task-overdue",
+          "name": "Overdue",
+          "type": "formula",
+          "formulaExpression": "and(prop(\"Status\") != \"Done\", prop(\"Due\") < now())"
+        },
+        {
+          "id": "task-health",
+          "name": "Project health",
+          "type": "rollup",
+          "rollup": {
+            "relationPropertyName": "Project",
+            "targetPropertyName": "Health",
+            "function": "show_original"
+          }
+        }
+      ]
+    }
+  ],
+  "rows": [
+    {
+      "id": "33333333333333333333333333333333",
+      "databaseId": "22222222222222222222222222222222",
+      "title": "Project Alpha",
+      "properties": {
+        "Tasks": {
+          "type": "relation",
+          "pageIds": [
+            "66666666666666666666666666666666",
+            "77777777777777777777777777777777"
+          ]
+        },
+        "Health": {
+          "type": "formula",
+          "value": "On track"
+        },
+        "Completed tasks": {
+          "type": "rollup",
+          "value": 1
+        }
+      }
+    },
+    {
+      "id": "44444444444444444444444444444444",
+      "databaseId": "22222222222222222222222222222222",
+      "title": "Project Beta",
+      "properties": {
+        "Tasks": {
+          "type": "relation",
+          "pageIds": [
+            "88888888888888888888888888888888"
+          ]
+        },
+        "Health": {
+          "type": "formula",
+          "value": "At risk"
+        },
+        "Completed tasks": {
+          "type": "rollup",
+          "value": 0
+        }
+      }
+    },
+    {
+      "id": "66666666666666666666666666666666",
+      "databaseId": "55555555555555555555555555555555",
+      "title": "Design migration graph",
+      "properties": {
+        "Project": {
+          "type": "relation",
+          "pageIds": [
+            "33333333333333333333333333333333"
+          ]
+        },
+        "Overdue": {
+          "type": "formula",
+          "value": false
+        },
+        "Project health": {
+          "type": "rollup",
+          "value": "On track"
+        }
+      }
+    },
+    {
+      "id": "77777777777777777777777777777777",
+      "databaseId": "55555555555555555555555555555555",
+      "title": "Build Loop preview",
+      "properties": {
+        "Project": {
+          "type": "relation",
+          "pageIds": [
+            "33333333333333333333333333333333"
+          ]
+        },
+        "Overdue": {
+          "type": "formula",
+          "value": false
+        },
+        "Project health": {
+          "type": "rollup",
+          "value": "On track"
+        }
+      }
+    },
+    {
+      "id": "88888888888888888888888888888888",
+      "databaseId": "55555555555555555555555555555555",
+      "title": "Review unsupported blocks",
+      "properties": {
+        "Project": {
+          "type": "relation",
+          "pageIds": [
+            "44444444444444444444444444444444"
+          ]
+        },
+        "Overdue": {
+          "type": "formula",
+          "value": false
+        },
+        "Project health": {
+          "type": "rollup",
+          "value": "At risk"
+        }
+      }
+    }
+  ],
+  "unsupportedBlocks": [
+    {
+      "pageId": "11111111111111111111111111111111",
+      "type": "synced_block",
+      "description": "The source synchronization relationship cannot be recreated from an export."
+    },
+    {
+      "pageId": "88888888888888888888888888888888",
+      "type": "embed",
+      "description": "The external embed requires a manual replacement or preserved link."
+    }
+  ]
+}

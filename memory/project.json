@@ -1,0 +1,208 @@
+{
+  "updated_at": "2026-07-22T16:15:36.8216186+09:00",
+  "project": {
+    "name": "Notion2Loop",
+    "stage": "prototype_demo_ready",
+    "problem": "Organizations interested in Microsoft Loop lack a high-fidelity path for moving complex Notion workspaces, which increases switching cost and slows Loop adoption.",
+    "goal": "Build an agent-assisted migration experience that preserves useful content, hierarchy, database semantics, links, and relationships while mapping unsupported Notion concepts to appropriate Microsoft 365 destinations.",
+    "non_goals": [
+      "Pixel-perfect reproduction of the Notion user interface.",
+      "Claiming lossless migration for unsupported source or target semantics.",
+      "Depending on fragile UI automation as the only production execution path."
+    ]
+  },
+  "product_principles": [
+    "Preserve semantic meaning before visual fidelity.",
+    "Use deterministic code for extraction, identity mapping, writes, retries, and validation.",
+    "Use agents only for ambiguous transformations and recommendations.",
+    "Keep a human approval boundary for lossy or high-impact transformations.",
+    "Produce an explicit migration report instead of silently dropping data.",
+    "Make migration resumable and idempotent.",
+    "Process enterprise data with least privilege and no unapproved external storage."
+  ],
+  "target_users": [
+    "Microsoft 365 organizations evaluating a move from Notion to Loop.",
+    "IT administrators and migration specialists.",
+    "Teams that need to retain interconnected project and knowledge data."
+  ],
+  "code_architecture": {
+    "style": "feature_first_domain_driven_design",
+    "status": "accepted",
+    "root_pattern": "src/features/<feature>/<layer>",
+    "layers": [
+      {
+        "name": "domain",
+        "responsibility": "Entities, value objects, aggregates, domain services, repository interfaces, and domain events."
+      },
+      {
+        "name": "application",
+        "responsibility": "Use cases, commands, queries, ports, orchestration, and transaction boundaries."
+      },
+      {
+        "name": "infrastructure",
+        "responsibility": "Notion and Microsoft clients, persistence, file parsing, external adapters, and port implementations."
+      },
+      {
+        "name": "presentation",
+        "responsibility": "CLI, HTTP, UI, browser extension, and agent-facing entry points."
+      }
+    ],
+    "dependency_rule": "Dependencies point inward toward application and domain; domain has no outward dependencies.",
+    "shared_rule": "Use src/shared only for genuinely cross-feature capabilities with no clear feature owner.",
+    "anti_pattern": "Do not organize feature-owned code into repository-wide horizontal domain, service, or infrastructure folders."
+  },
+  "implementation_stack": {
+    "status": "accepted",
+    "language": "TypeScript",
+    "runtime": "Node.js 24",
+    "environment_manager": "Project-local portable Micromamba",
+    "environment_prefix": ".venv",
+    "conda_channel": "conda-forge",
+    "package_manager": "npm inside the Micromamba environment",
+    "dependency_lock": "package-lock.json",
+    "test_runner": "Vitest",
+    "configuration": [
+      "environment.yml",
+      "package.json",
+      "tsconfig.json",
+      "vitest.config.ts",
+      "scripts/bootstrap.ps1",
+      "scripts/run-in-env.ps1"
+    ]
+  },
+  "prototype_capabilities": {
+    "status": "implemented",
+    "inputs": [
+      "Notion Markdown and CSV export directories.",
+      "Notion export ZIP archives.",
+      "A sanitized companion Notion API snapshot for stable IDs, property schemas, formulas, rollups, and relations."
+    ],
+    "pipeline": [
+      "Build a deterministic canonical workspace graph.",
+      "Classify items and links as native, transformed, manual, or blocked.",
+      "Generate provider-neutral agent tasks with explicit approval and untrusted-data boundaries.",
+      "Render sanitized Loop-ready rich HTML and a local migration dashboard."
+    ],
+    "outputs": [
+      "Canonical graph JSON.",
+      "Migration plan and fidelity report.",
+      "Structured Claude/GPT-compatible agent task queue.",
+      "Per-item HTML previews and a visual local dashboard."
+    ],
+    "safety_boundaries": [
+      "Source archive and directory ingestion is bounded by file count and byte limits.",
+      "ZIP paths are normalized and traversal paths are rejected before extraction.",
+      "Untrusted source IDs are hashed before being used as generated filenames.",
+      "Rendered content is sanitized before preview or clipboard use.",
+      "The local dashboard server is restricted to localhost and its resolved content root."
+    ]
+  },
+  "proposed_system": {
+    "ingestion": [
+      "Notion API for stable IDs, hierarchy, blocks, database schemas, property types, and relations.",
+      "Notion Markdown and CSV workspace export for page content and portable snapshots.",
+      "Notion HTML export when comments or additional visual fallback content is required.",
+      "Exported binary assets for durable image and attachment migration."
+    ],
+    "canonical_model": {
+      "description": "A model-neutral graph representing pages, blocks, databases, properties, assets, users, and typed edges.",
+      "core_entities": [
+        "workspace",
+        "page",
+        "block",
+        "database",
+        "database_row",
+        "property_schema",
+        "asset",
+        "identity"
+      ],
+      "core_edges": [
+        "parent_child",
+        "internal_link",
+        "database_relation",
+        "backlink",
+        "attachment",
+        "mention"
+      ]
+    },
+    "planning": [
+      "Compatibility scan before migration.",
+      "Per-database mapping policy selection.",
+      "Dry-run manifest with expected losses and required approvals."
+    ],
+    "execution": [
+      "First pass creates target containers and records source-to-target IDs.",
+      "Second pass restores internal links and relations using the ID map.",
+      "Microsoft Graph is used where supported for Lists, Planner, SharePoint, and OneDrive.",
+      "Loop content uses an internal supported action surface if available; otherwise use guided rich-content insertion with user approval."
+    ],
+    "agent_role": [
+      "Recommend mappings for unsupported or ambiguous blocks.",
+      "Translate formulas or rollups into candidate Microsoft 365 implementations.",
+      "Restructure complex Notion layouts into Loop-friendly content.",
+      "Explain information loss and generate remediation suggestions."
+    ],
+    "validation": [
+      "Compare source and target entity counts.",
+      "Verify internal link and relation resolution.",
+      "Track unsupported, transformed, skipped, and failed items.",
+      "Generate a final fidelity and manual-action report."
+    ]
+  },
+  "proposed_mapping_strategy": [
+    {
+      "notion_type": "regular_page_and_basic_blocks",
+      "target": "Loop page or Copilot Page",
+      "status": "proposed"
+    },
+    {
+      "notion_type": "simple_database",
+      "target": "Loop table",
+      "status": "proposed"
+    },
+    {
+      "notion_type": "typed_or_relational_database",
+      "target": "Microsoft Lists with links or supported components surfaced in Loop",
+      "status": "proposed"
+    },
+    {
+      "notion_type": "task_database",
+      "target": "Planner or Microsoft Lists depending on schema",
+      "status": "proposed"
+    },
+    {
+      "notion_type": "files_and_images",
+      "target": "SharePoint or OneDrive with references from Loop",
+      "status": "proposed"
+    },
+    {
+      "notion_type": "formula_and_rollup",
+      "target": "Calculated column, Power Automate, custom component, or static snapshot with warning",
+      "status": "proposed"
+    }
+  ],
+  "known_constraints": [
+    "No public supported API for bulk creation or mutation of native Loop page content was found as of the last research date.",
+    "Notion Markdown and CSV exports are lossy and cannot recreate a workspace by themselves.",
+    "Notion and Loop do not have one-to-one database, relation, view, permission, comment, or automation semantics.",
+    "Copilot in Loop cannot currently reason over an entire Loop workspace or directly update the current page.",
+    "Private or inaccessible Notion content cannot be migrated without appropriate source permissions."
+  ],
+  "candidate_success_metrics": [
+    "Percentage of supported source blocks migrated without manual edits.",
+    "Percentage of internal links and relations successfully resolved.",
+    "Reduction in manual migration time.",
+    "Number and severity of silently lost items, with a target of zero silent loss.",
+    "Successful completion and resume rate for interrupted migrations.",
+    "Loop activation or continued usage after migration."
+  ],
+  "open_questions": [
+    "Does an internal Loop action or content API exist, and does it support page and block creation rather than only workspace governance?",
+    "Which Microsoft 365 destination should be the default for each category of Notion database?",
+    "What fidelity threshold defines a successful MVP?",
+    "Which Notion block and property types are most common in target customer workspaces?",
+    "Can a supported Microsoft agent or computer-use surface safely execute Loop writes with audit and rollback?",
+    "What tenant, compliance, and licensing constraints apply to the intended pilot environment?",
+    "Which delivery surfaces should be used beyond the prototype CLI and static local dashboard?"
+  ]
+}

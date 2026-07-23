@@ -1,0 +1,93 @@
+{
+  "updated_at": "2026-07-22T16:15:36.8216186+09:00",
+  "decisions": [
+    {
+      "id": "D-001",
+      "status": "accepted",
+      "decided_at": "2026-07-22T11:09:09+09:00",
+      "decision": "The project should support complex Notion migration, including workspace hierarchy, databases, and relationship links.",
+      "rationale": "The user explicitly chose complex migration rather than a basic Markdown-only converter.",
+      "source": "User conversation"
+    },
+    {
+      "id": "D-002",
+      "status": "proposed",
+      "decided_at": "2026-07-22T11:09:09+09:00",
+      "decision": "Define success as semantic preservation rather than a pixel-perfect Notion clone.",
+      "rationale": "Loop and Notion have different content, database, permission, and automation models.",
+      "source": "Feasibility analysis"
+    },
+    {
+      "id": "D-003",
+      "status": "proposed",
+      "decided_at": "2026-07-22T11:09:09+09:00",
+      "decision": "Use the Notion API and workspace exports together as migration inputs.",
+      "rationale": "The API preserves typed IDs and relations, while exports provide durable page snapshots and assets.",
+      "source": "Research findings R-004 and R-005"
+    },
+    {
+      "id": "D-004",
+      "status": "proposed",
+      "decided_at": "2026-07-22T11:09:09+09:00",
+      "decision": "Use a two-pass migration: create target objects first, then restore links and relations from the source-to-target ID map.",
+      "rationale": "Relations cannot be resolved until target identities exist.",
+      "source": "Architecture analysis"
+    },
+    {
+      "id": "D-005",
+      "status": "proposed",
+      "decided_at": "2026-07-22T11:17:08+09:00",
+      "decision": "Build an agent-assisted migration harness in which deterministic code performs parsing, writes, retries, and validation, while an agent handles ambiguous transformations.",
+      "rationale": "Agents can reason about mismatched semantics but cannot replace a missing Loop write action surface.",
+      "source": "Research finding R-006 and user discussion"
+    },
+    {
+      "id": "D-006",
+      "status": "proposed",
+      "decided_at": "2026-07-22T11:17:08+09:00",
+      "decision": "Require user approval for lossy transformations and guided insertion when no supported Loop content API is available.",
+      "rationale": "The current Loop Copilot cannot autonomously update the page, and UI automation is too fragile to be the sole production path.",
+      "source": "Research finding R-006"
+    },
+    {
+      "id": "D-007",
+      "status": "proposed",
+      "decided_at": "2026-07-22T11:17:08+09:00",
+      "decision": "Treat imported Notion content as untrusted data and isolate it from agent instructions.",
+      "rationale": "A migration agent can otherwise be exposed to prompt injection embedded in source pages.",
+      "source": "Security analysis"
+    },
+    {
+      "id": "D-008",
+      "status": "accepted",
+      "decided_at": "2026-07-22T11:45:00.2845448+09:00",
+      "decision": "Use feature-first Domain-Driven Design, with domain, application, infrastructure, and presentation layers stored inside each feature.",
+      "rationale": "The user explicitly requested DDD layers with feature-based code organization.",
+      "source": "User conversation"
+    },
+    {
+      "id": "D-009",
+      "status": "accepted",
+      "decided_at": "2026-07-22T14:35:39.1234817+09:00",
+      "decision": "Use TypeScript on Node.js 24 in a project-local portable Micromamba environment, with npm dependency locking and Vitest.",
+      "rationale": "Conda-family tools were unavailable, so portable Micromamba provides reproducible isolation without machine-wide changes. The environment and toolchain were created and executed successfully.",
+      "source": "Implemented prototype environment"
+    },
+    {
+      "id": "D-010",
+      "status": "accepted",
+      "decided_at": "2026-07-22T16:15:36.8216186+09:00",
+      "decision": "Use an offline migration package as the prototype execution boundary: deterministic analysis, sanitized Loop-ready HTML, a local review dashboard, and provider-neutral agent tasks with human-approved insertion.",
+      "rationale": "The complete prototype was implemented and validated without relying on an undocumented Loop content mutation API.",
+      "source": "Implemented end-to-end prototype"
+    },
+    {
+      "id": "D-011",
+      "status": "accepted",
+      "decided_at": "2026-07-22T16:15:36.8216186+09:00",
+      "decision": "Treat archive metadata and source identifiers as untrusted: enforce bounded ingestion, reject unsafe ZIP paths before extraction, and never use source IDs directly as output paths.",
+      "rationale": "Migration inputs can be malformed or adversarial, and source-controlled paths must not escape the generated package or exhaust local resources.",
+      "source": "Implemented security hardening and regression tests"
+    }
+  ]
+}

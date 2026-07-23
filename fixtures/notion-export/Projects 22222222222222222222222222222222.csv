@@ -1,0 +1,3 @@
+Name,Status,Owner,Progress,Tasks,Health,Completed tasks
+Project Alpha,In progress,Ada Lovelace,50,"Design migration graph, Build Loop preview",On track,1
+Project Beta,Planning,Grace Hopper,20,Review unsupported blocks,At risk,0

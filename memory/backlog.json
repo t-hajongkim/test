@@ -1,0 +1,162 @@
+{
+  "updated_at": "2026-07-22T17:32:08.9187133+09:00",
+  "items": [
+    {
+      "id": "B-001",
+      "priority": "P0",
+      "status": "pending",
+      "title": "Confirm Loop write surfaces",
+      "description": "Determine whether internal or newly released APIs can create workspaces, pages, blocks, and components. Separate governance APIs from content mutation APIs.",
+      "depends_on": []
+    },
+    {
+      "id": "B-002",
+      "priority": "P0",
+      "status": "done",
+      "title": "Create representative Notion fixture",
+      "description": "Build a sanitized workspace with nested pages, databases, two-way relations, formulas, rollups, views, comments, files, mentions, synced blocks, and unsupported embeds.",
+      "depends_on": []
+    },
+    {
+      "id": "B-003",
+      "priority": "P0",
+      "status": "done",
+      "title": "Define canonical graph schema",
+      "description": "Specify stable entities, typed properties, block payloads, assets, source IDs, target IDs, edges, and migration status fields.",
+      "depends_on": [
+        "B-002"
+      ]
+    },
+    {
+      "id": "B-004",
+      "priority": "P0",
+      "status": "done",
+      "title": "Implement source compatibility scanner",
+      "description": "Read a companion Notion API snapshot and export data, inventory every entity, and classify expected fidelity before writing target content.",
+      "depends_on": [
+        "B-002",
+        "B-003"
+      ]
+    },
+    {
+      "id": "B-005",
+      "priority": "P0",
+      "status": "done",
+      "title": "Prototype Loop execution adapter",
+      "description": "Test a supported internal action surface if available; otherwise prototype user-approved rich HTML insertion and record its fidelity and failure modes.",
+      "depends_on": []
+    },
+    {
+      "id": "B-006",
+      "priority": "P1",
+      "status": "pending",
+      "title": "Implement two-pass identity mapping",
+      "description": "Create target objects, persist source-to-target IDs, then resolve links, relations, backlinks, and attachment references.",
+      "depends_on": [
+        "B-003",
+        "B-005"
+      ]
+    },
+    {
+      "id": "B-007",
+      "priority": "P1",
+      "status": "pending",
+      "title": "Evaluate Microsoft 365 database mappings",
+      "description": "Compare Loop tables, Microsoft Lists, Planner, calculated columns, Power Automate, and custom components for common Notion database patterns.",
+      "depends_on": [
+        "B-002"
+      ]
+    },
+    {
+      "id": "B-008",
+      "priority": "P1",
+      "status": "done",
+      "title": "Design agent transformation harness",
+      "description": "Define strict prompts, structured input and output schemas, allowed transformation classes, approval boundaries, and deterministic validators.",
+      "depends_on": [
+        "B-003",
+        "B-004"
+      ]
+    },
+    {
+      "id": "B-009",
+      "priority": "P1",
+      "status": "in_progress",
+      "title": "Add prompt injection defenses",
+      "description": "Treat source pages as untrusted data, isolate instructions, constrain tool access, validate outputs, and log agent decisions.",
+      "depends_on": [
+        "B-008"
+      ]
+    },
+    {
+      "id": "B-010",
+      "priority": "P1",
+      "status": "pending",
+      "title": "Build migration validation report",
+      "description": "Report migrated, transformed, skipped, failed, and manually required entities with relation and link integrity checks.",
+      "depends_on": [
+        "B-004",
+        "B-006"
+      ]
+    },
+    {
+      "id": "B-011",
+      "priority": "P2",
+      "status": "pending",
+      "title": "Evaluate Adaptive Card bridge",
+      "description": "Test whether externally backed Adaptive Card-based Loop components provide useful transition value for unsupported Notion databases.",
+      "depends_on": [
+        "B-007"
+      ]
+    },
+    {
+      "id": "B-012",
+      "priority": "P2",
+      "status": "pending",
+      "title": "Define pilot success metrics",
+      "description": "Choose fidelity, migration time, manual correction, resume reliability, and Loop adoption measurements for the intern project demo.",
+      "depends_on": [
+        "B-002",
+        "B-004"
+      ]
+    },
+    {
+      "id": "B-013",
+      "priority": "P0",
+      "status": "done",
+      "title": "Select stack and create DDD scaffold",
+      "description": "Choose the implementation language and runtime, then create feature-first modules with domain, application, infrastructure, and presentation layers inside each feature.",
+      "depends_on": []
+    },
+    {
+      "id": "B-014",
+      "priority": "P0",
+      "status": "done",
+      "title": "Harden untrusted migration inputs",
+      "description": "Bound directory and ZIP ingestion, reject unsafe and duplicate source paths before extraction, isolate generated filenames from source IDs, clean stale package pages, and constrain static serving to the resolved output root.",
+      "depends_on": [
+        "B-004",
+        "B-005"
+      ]
+    },
+    {
+      "id": "B-015",
+      "priority": "P0",
+      "status": "pending",
+      "title": "Configure read-only Notion integration",
+      "description": "Create an internal integration with Read content capability, connect the migration root and related databases, and place the token only in local ignored secret configuration.",
+      "depends_on": []
+    },
+    {
+      "id": "B-016",
+      "priority": "P0",
+      "status": "pending",
+      "title": "Implement live Notion API collector",
+      "description": "Traverse the connected workspace through the Notion API and emit the existing companion snapshot schema with pages, database schemas, rows, relations, formulas, rollups, and unsupported-block metadata.",
+      "depends_on": [
+        "B-003",
+        "B-015"
+      ]
+    }
+  ]
+}
