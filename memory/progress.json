@@ -1,9 +1,9 @@
 {
-  "updated_at": "2026-07-23T10:11:18.590+09:00",
+  "updated_at": "2026-07-23T10:12:28.856+09:00",
   "overall": {
     "status": "in_progress",
-    "phase": "ci_quality_gate",
-    "current_focus": "Validate the offline prototype automatically on pull requests and main pushes without publishing generated migration output."
+    "phase": "live_notion_ingestion_setup",
+    "current_focus": "Prepare a read-only Notion internal integration, then implement a live API collector that generates the companion snapshot used with the ZIP export."
   },
   "completed": [
     {
@@ -70,6 +70,11 @@
       "id": "P-013",
       "completed_at": "2026-07-23T10:05:12.850+09:00",
       "summary": "Migrated the allowlisted offline prototype into the Git-backed target repository, documented its safety boundaries, and verified the Node.js 24 type-check, tests, build, demo, and staged-data security checks."
+    },
+    {
+      "id": "P-014",
+      "completed_at": "2026-07-23T10:12:28.856+09:00",
+      "summary": "Added and remotely verified the Node.js 24 CI quality gate for locked install, type-check, tests, build, demo generation, and required output-file checks without publishing generated output."
     }
   ],
   "blockers": [
@@ -93,7 +98,6 @@
     }
   ],
   "next_steps": [
-    "Verify the CI quality gate locally and in the pull request, then keep the generated output private and uncommitted.",
     "Create a Notion internal integration with Read content capability.",
     "Connect the representative workspace root page and every related database to the integration.",
     "Store the Notion token in a local ignored environment file and identify the migration root page ID; never place the token in chat or project memory.",
@@ -168,6 +172,10 @@
     {
       "timestamp": "2026-07-23T10:11:18.590+09:00",
       "event": "Passed the CI-equivalent local Node.js 24 validation: locked install, type-check, 9 tests, build, demo generation, and all four required output-file checks."
+    },
+    {
+      "timestamp": "2026-07-23T10:12:28.856+09:00",
+      "event": "Opened the CI quality-gate pull request and confirmed the GitHub Actions Validate prototype job completed successfully."
     }
   ]
 }
