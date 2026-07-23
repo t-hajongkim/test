@@ -124,7 +124,7 @@ describe("connection setup", () => {
     });
 
     expect(saved).toMatchObject({
-      status: "ready_for_analysis",
+      status: "configuration_ready",
       configured: true,
       notionTokenPresent: true,
       source: {
@@ -133,6 +133,11 @@ describe("connection setup", () => {
           kind: "page",
           id: "1234567890abcdef1234567890abcdef",
         },
+      },
+      workflow: {
+        analysis: "not_started",
+        reviewApproval: "not_started",
+        deployment: "disabled",
       },
     });
     expect(JSON.stringify(saved)).not.toContain(marker);

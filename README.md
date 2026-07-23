@@ -98,7 +98,7 @@ flowchart LR
     class Analyze,Review,Lists,SharePoint,Planner future
 ```
 
-실선은 제품의 장기 흐름을 나타내며, 이번 PR은 Source 설정을 검증해 `ready_for_analysis` 상태를 만드는 데까지만 구현합니다. 점선 스타일의 분석·승인·배포는 후속 PR 범위입니다.
+실선은 제품의 장기 흐름을 나타내며, 이번 PR은 Source 설정을 검증해 `configuration_ready` 상태를 만드는 데까지만 구현합니다. 이 상태는 연결 설정만 완료됐다는 뜻이며 ZIP bytes, parsing 결과 또는 Notion API 수집 데이터는 아직 없습니다. 점선 스타일의 입력 획득·분석·승인·배포는 후속 PR 범위입니다.
 
 ## 연결 용어
 

@@ -6,7 +6,7 @@ import type {
 import type { ConnectionSessionRecord } from "./connection-session-store.js";
 
 export interface ConnectionSessionSummary {
-  readonly status: "collecting_configuration" | "ready_for_analysis";
+  readonly status: "collecting_configuration" | "configuration_ready";
   readonly configured: boolean;
   readonly notionTokenPresent: boolean;
   readonly source?: ConnectionSourceConfiguration;
@@ -28,7 +28,7 @@ export function summarizeConnectionSession(
     (session.configuration.source.kind === "zip" || notionTokenPresent);
 
   return {
-    status: configured ? "ready_for_analysis" : "collecting_configuration",
+    status: configured ? "configuration_ready" : "collecting_configuration",
     configured,
     notionTokenPresent,
     ...(session.configuration

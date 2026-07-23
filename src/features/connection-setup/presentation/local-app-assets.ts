@@ -140,7 +140,7 @@ export const LOCAL_APP_HTML = `<!doctype html>
           </div>
           <div class="scope-note compact">
             <strong>아직 실행되지 않습니다.</strong>
-            <span>이번 저장은 다음 use case가 사용할 준비 상태만 만듭니다.</span>
+            <span>이번 저장은 연결 설정만 완료합니다. ZIP 내용이나 Notion 데이터는 아직 획득하지 않았습니다.</span>
           </div>
         </section>
 
@@ -153,8 +153,8 @@ export const LOCAL_APP_HTML = `<!doctype html>
 
       <section class="summary" data-summary hidden>
         <p class="eyebrow">SESSION MEMORY</p>
-        <h2>연결 준비가 저장되었습니다.</h2>
-        <p>민감한 token 값은 표시하지 않습니다. 분석과 배포는 아직 시작되지 않았습니다.</p>
+        <h2>연결 설정이 저장되었습니다.</h2>
+        <p>민감한 token 값은 표시하지 않습니다. 분석 입력 데이터는 아직 없으며 분석과 배포도 시작되지 않았습니다.</p>
         <pre data-summary-content></pre>
         <div class="summary-actions">
           <button class="secondary" type="button" data-action="clear-token">Notion 토큰 지우기</button>

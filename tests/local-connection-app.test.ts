@@ -102,9 +102,14 @@ describe("local connection app", () => {
     expect(saveResponse.status).toBe(200);
     expect(saveBody).not.toContain(marker);
     expect(JSON.parse(saveBody)).toMatchObject({
-      status: "ready_for_analysis",
+      status: "configuration_ready",
       configured: true,
       notionTokenPresent: true,
+      workflow: {
+        analysis: "not_started",
+        reviewApproval: "not_started",
+        deployment: "disabled",
+      },
     });
 
     const summaryResponse = await fetch(
@@ -172,12 +177,17 @@ describe("local connection app", () => {
     );
 
     expect(await response.json()).toMatchObject({
-      status: "ready_for_analysis",
+      status: "configuration_ready",
       source: {
         kind: "zip",
         file: { name: "workspace.zip", sizeBytes: 4_096 },
       },
       notionTokenPresent: false,
+      workflow: {
+        analysis: "not_started",
+        reviewApproval: "not_started",
+        deployment: "disabled",
+      },
     });
   });
 
